@@ -1,0 +1,56 @@
+# Project Rules & Philosophy
+
+## Tech Stack
+- Framework: React + Vite
+- Language: TypeScript (Strict mode)
+- Styling: Tailwind CSS
+- Data: Firebase v9 (Firestore, Auth, Storage)
+- State: React Context for Auth/User data
+- Icons: Lucide React
+- Animation: Framer Motion (crucial for the "natural/breathing" feel)
+
+## Design Aesthetic ("The Vibe")
+- Style: "Organic Modernism." Clean, minimal, but warm.
+- Palette: Soft pastels (Sage, Lavender, Blush, Sky).
+- UI Elements: Glassmorphism cards (backdrop-blur), rounded-xl corners.
+- Motion: Slow, breathing animations. No harsh transitions.
+
+## Data Schema
+The `JournalEntry` interface must match this legacy format AND new needs:
+// types.ts
+
+export interface JournalEntry {
+  // Identifiers
+  id: string;          // Firestore Document ID
+  userId: string;      // Crucial for security rules (so only she sees her data)
+
+  // Core Content
+  text: string;        // HTML or Markdown from the editor
+  photos: string[];    // Array of public Firebase Storage URLs
+
+  // Time & Search
+  date: number;        // Unix Timestamp (ms). Single source of truth for time.
+  dayKey: string;      // "MM-DD" (e.g., "11-24"). CRITICAL for "On This Day" queries.
+
+  // Metadata (Grouped for cleaner React props)
+  mood: number;        // 0-5 or 1-10 scale
+  
+  weather?: {          // Optional, as not every entry has weather
+    temperature: number; 
+    condition: string; // e.g. "Broken Clouds"
+    icon?: string;     // Keep the legacy icon code or map to a new one
+  };
+
+  location?: {         // Optional
+    address: string;
+    lat: number;
+    lng: number;       // Note: Standardize on 'lng' or 'lon'. Google Maps uses 'lng'.
+  };
+
+  // Fun extras
+  tags: string[];
+  music?: {            // Optional legacy data
+    artist: string;
+    title: string;
+  };
+}
