@@ -4,12 +4,28 @@
      because standard resets are included, but you can keep global styles here.
 */
 @theme {
-  /* You can add custom overrides here if needed later */
+  --color-primary: #E0B0B6;
+  --color-secondary: #D4C4B7;
+  --color-bg: #FAF9F6;
+  --color-surface: #FFFFFF;
+  --color-text: #4A4A4A;
+  
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-serif: "Playfair Display", serif;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
 }
 
 @layer utilities {
   .glassmorphism {
-    @apply backdrop-blur-xl bg-white/10 border border-white/20;
+    @apply backdrop-blur-xl bg-white/40 border border-white/30 shadow-sm;
   }
   
   .scrollbar-hide {
@@ -20,33 +36,32 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
-
 }
 
 /* TipTap Editor Styles */
 .ProseMirror {
-  @apply text-gray-800;
+  @apply text-gray-800 outline-none min-h-[200px];
 }
 
 .ProseMirror p {
-  @apply mb-4 leading-7;
+  @apply mb-4 leading-7 text-lg;
 }
 
 .ProseMirror h1 {
-  @apply text-3xl font-bold mb-4 mt-6;
+  @apply text-3xl font-serif font-bold mb-4 mt-6 text-gray-900;
 }
 
 .ProseMirror h2 {
-  @apply text-2xl font-bold mb-3 mt-5;
+  @apply text-2xl font-serif font-bold mb-3 mt-5 text-gray-800;
 }
 
 .ProseMirror h3 {
-  @apply text-xl font-bold mb-2 mt-4;
+  @apply text-xl font-serif font-bold mb-2 mt-4 text-gray-800;
 }
 
 .ProseMirror ul,
 .ProseMirror ol {
-  @apply pl-6 mb-4;
+  @apply pl-6 mb-4 list-disc;
 }
 
 .ProseMirror li {
@@ -54,7 +69,7 @@
 }
 
 .ProseMirror blockquote {
-  @apply border-l-4 border-gray-300 pl-4 italic my-4;
+  @apply border-l-4 border-primary pl-4 italic my-4 text-gray-600;
 }
 
 .ProseMirror code {
@@ -66,7 +81,7 @@
 }
 
 .ProseMirror img {
-  @apply max-w-full h-auto rounded-lg my-4;
+  @apply max-w-full h-auto rounded-xl shadow-md my-6;
 }
 
 .ProseMirror:focus {

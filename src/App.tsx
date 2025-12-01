@@ -1,59 +1,43 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider, useAuth } from './context/AuthContext'
-import ProtectedRoute from './components/ProtectedRoute'
-import MainLayout from './components/MainLayout'
-import AnimatedBackground from './components/AnimatedBackground'
-import LoadingSpinner from './components/LoadingSpinner'
-import Home from './pages/Home'
-import Login from './pages/Login'
-import Calendar from './pages/Calendar'
-import Entry from './pages/Entry'
-import Settings from './pages/Settings'
+import { ThemeProvider, CssBaseline } from '@mui/material';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import theme from './theme';
+import Layout from './components/Layout';
+import ProtectedRoute from './components/ProtectedRoute';
+import Login from './pages/Login';
+import Home from './pages/Home';
+import Calendar from './pages/Calendar';
+import Settings from './pages/Settings';
+import Entry from './pages/Entry';
+import Journal from './pages/Journal';
+import Search from './pages/Search';
 
-const AppRoutes = () => {
-  const { user, loading } = useAuth()
 
-  if (loading) {
-    return <LoadingSpinner />
-  }
-
-  return (
-    <Routes>
-      <Route path="/login" element={!user ? <Login /> : <Navigate to="/" replace />} />
-      <Route
-        path="/entry/:id"
-        element={
-          <ProtectedRoute>
-            <Entry />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <MainLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route index element={<Home />} />
-        <Route path="calendar" element={<Calendar />} />
-        <Route path="settings" element={<Settings />} />
-      </Route>
-    </Routes>
-  )
-}
 
 function App() {
   return (
-    <AuthProvider>
-      <div className="min-h-screen bg-white relative">
-        <AnimatedBackground />
-        <AppRoutes />
-      </div>
-    </AuthProvider>
-  )
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<Home />} />
+            <Route path="journal" element={<Journal />} />
+            <Route path="journal/:id" element={<Entry />} />
+            <Route path="calendar" element={<Calendar />} />
+            <Route path="search" element={<Search />} />
+            <Route path="settings" element={<Settings />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
+        </Routes>
+      </AuthProvider>
+    </ThemeProvider>
+  );
 }
 
-export default App
-
+export default App;
