@@ -1,22 +1,27 @@
 @import "tailwindcss";
 
-/* 1. @layer base { body { ... } } is not strictly needed in v4 
-     because standard resets are included, but you can keep global styles here.
-*/
 @theme {
   --color-primary: #E0B0B6;
   --color-secondary: #D4C4B7;
   --color-bg: #FAF9F6;
   --color-surface: #FFFFFF;
   --color-text: #4A4A4A;
-  
+
   --font-sans: "Inter", system-ui, sans-serif;
   --font-serif: "Playfair Display", serif;
 }
 
 @layer base {
+  html {
+    background-color: #FAF9F6;
+  }
+
+  html.dark {
+    background-color: #1A1A1A;
+  }
+
   body {
-    background-color: var(--color-bg);
+    background-color: transparent;
     color: var(--color-text);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
@@ -27,12 +32,12 @@
   .glassmorphism {
     @apply backdrop-blur-xl bg-white/40 border border-white/30 shadow-sm;
   }
-  
+
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  
+
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
@@ -40,36 +45,80 @@
 
 /* TipTap Editor Styles */
 .ProseMirror {
-  @apply text-gray-800 outline-none min-h-[200px];
+  @apply outline-none min-h-[200px];
+  color: #1a1a1a !important;
+}
+
+:is(.dark .ProseMirror) {
+  color: #e5e5e5 !important;
 }
 
 .ProseMirror p {
   @apply mb-4 leading-7 text-lg;
+  color: #1a1a1a !important;
+}
+
+:is(.dark .ProseMirror p) {
+  color: #e5e5e5 !important;
 }
 
 .ProseMirror h1 {
-  @apply text-3xl font-serif font-bold mb-4 mt-6 text-gray-900;
+  @apply text-3xl font-serif font-bold mb-4 mt-6;
+  color: #1a1a1a !important;
+}
+
+:is(.dark .ProseMirror h1) {
+  color: #ffffff !important;
 }
 
 .ProseMirror h2 {
-  @apply text-2xl font-serif font-bold mb-3 mt-5 text-gray-800;
+  @apply text-2xl font-serif font-bold mb-3 mt-5;
+  color: #1a1a1a !important;
+}
+
+:is(.dark .ProseMirror h2) {
+  color: #f5f5f5 !important;
 }
 
 .ProseMirror h3 {
-  @apply text-xl font-serif font-bold mb-2 mt-4 text-gray-800;
+  @apply text-xl font-serif font-bold mb-2 mt-4;
+  color: #1a1a1a !important;
 }
 
-.ProseMirror ul,
-.ProseMirror ol {
+:is(.dark .ProseMirror h3) {
+  color: #f5f5f5 !important;
+}
+
+.ProseMirror ul {
   @apply pl-6 mb-4 list-disc;
+  color: #1a1a1a !important;
+}
+
+.ProseMirror ol {
+  @apply pl-6 mb-4 list-decimal;
+  color: #1a1a1a !important;
+}
+
+:is(.dark .ProseMirror ul),
+:is(.dark .ProseMirror ol) {
+  color: #e5e5e5 !important;
 }
 
 .ProseMirror li {
-  @apply mb-2;
+  @apply mb-0;
+  color: #1a1a1a !important;
+}
+
+.ProseMirror li p {
+  @apply mb-0;
+}
+
+:is(.dark .ProseMirror li) {
+  color: #e5e5e5 !important;
 }
 
 .ProseMirror blockquote {
-  @apply border-l-4 border-primary pl-4 italic my-4 text-gray-600;
+  @apply border-l-4 border-primary pl-4 italic my-4 text-gray-600 dark:text-gray-400;
 }
 
 .ProseMirror code {

@@ -60,7 +60,7 @@ export default function CalendarView({ entries, onDateSelect }: CalendarViewProp
     };
 
     return (
-        <Paper elevation={0} sx={{ p: 4, borderRadius: 4, bgcolor: 'white' }}>
+        <Paper elevation={0} sx={{ p: 4, borderRadius: 4, bgcolor: 'background.paper' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4 }}>
                 <IconButton onClick={handlePrevMonth}>
                     <ChevronLeft />
@@ -105,12 +105,13 @@ export default function CalendarView({ entries, onDateSelect }: CalendarViewProp
                                         justifyContent: 'center',
                                         borderRadius: '50%',
                                         cursor: 'pointer',
-                                        bgcolor: isToday ? 'primary.main' : (hasEntry ? 'rgba(224, 176, 182, 0.2)' : 'transparent'),
-                                        color: isToday ? 'white' : (hasEntry ? 'primary.main' : 'text.primary'),
+                                        bgcolor: isToday ? 'primary.main' : (hasEntry ? 'primary.light' : 'transparent'),
+                                        color: isToday ? 'primary.contrastText' : (hasEntry ? 'primary.main' : 'text.primary'),
                                         fontWeight: (isToday || hasEntry) ? 600 : 400,
                                         border: isToday ? 'none' : '1px solid transparent',
+                                        opacity: hasEntry && !isToday ? 0.2 : 1,
                                         '&:hover': {
-                                            bgcolor: isToday ? 'primary.dark' : 'rgba(0,0,0,0.05)'
+                                            bgcolor: isToday ? 'primary.dark' : 'action.hover'
                                         }
                                     }}
                                 >

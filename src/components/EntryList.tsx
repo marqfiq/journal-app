@@ -78,7 +78,7 @@ export default function EntryList() {
                         ),
                     }}
                     sx={{
-                        bgcolor: 'white',
+                        bgcolor: 'background.paper',
                         borderRadius: 3,
                         '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
                         boxShadow: '0px 4px 20px rgba(0,0,0,0.03)'
@@ -123,7 +123,7 @@ export default function EntryList() {
                                                 <Chip
                                                     label={['Neutral', 'Happy', 'Sad', 'Excited', 'Calm', 'Anxious'][entry.mood] || 'Mood'}
                                                     size="small"
-                                                    sx={{ bgcolor: 'rgba(224, 176, 182, 0.2)', color: 'primary.main', fontWeight: 600 }}
+                                                    sx={{ bgcolor: 'action.hover', color: 'primary.main', fontWeight: 600 }}
                                                 />
                                             )}
                                         </Box>
@@ -134,7 +134,7 @@ export default function EntryList() {
 
                                         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                                             {entry.tags?.map(tag => (
-                                                <Chip key={tag} label={`#${tag}`} size="small" variant="outlined" sx={{ borderColor: 'rgba(0,0,0,0.1)' }} />
+                                                <Chip key={tag} label={`#${tag}`} size="small" variant="outlined" sx={{ borderColor: 'divider' }} />
                                             ))}
                                             {entry.location && (
                                                 <Chip
@@ -142,7 +142,7 @@ export default function EntryList() {
                                                     label={entry.location.address.split(',')[0]}
                                                     size="small"
                                                     variant="outlined"
-                                                    sx={{ borderColor: 'rgba(0,0,0,0.1)' }}
+                                                    sx={{ borderColor: 'divider' }}
                                                 />
                                             )}
                                         </Box>

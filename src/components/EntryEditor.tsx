@@ -2,7 +2,7 @@ import React from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
-import { Box, Paper, ToggleButton, ToggleButtonGroup, IconButton, Tooltip } from '@mui/material';
+import { Box, Paper, ToggleButton, ToggleButtonGroup, IconButton, Tooltip, Divider } from '@mui/material';
 import { Bold, Italic, List, ListOrdered, Image as ImageIcon, Quote, Undo, Redo } from 'lucide-react';
 
 interface EntryEditorProps {
@@ -19,14 +19,18 @@ const MenuBar = ({ editor }: { editor: any }) => {
     return (
         <Box
             sx={{
-                p: 1,
-                borderBottom: '1px solid rgba(0,0,0,0.05)',
+                py: 1,
                 display: 'flex',
                 gap: 1,
                 flexWrap: 'wrap',
-                bgcolor: 'rgba(255,255,255,0.5)',
-                borderTopLeftRadius: 16,
-                borderTopRightRadius: 16,
+                alignItems: 'center',
+                position: 'sticky',
+                top: 0,
+                zIndex: 10,
+                bgcolor: 'background.paper',
+                borderBottom: 1,
+                borderColor: 'divider',
+                mb: 2
             }}
         >
             <ToggleButtonGroup size="small" exclusive aria-label="text formatting">
@@ -103,25 +107,17 @@ export default function EntryEditor({ initialContent = '', onUpdate, editable = 
         },
         editorProps: {
             attributes: {
-                class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none min-h-[300px] p-4',
+                class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none min-h-[300px] p-4 dark:prose-invert',
             },
         },
     });
 
     return (
-        <Paper
-            elevation={0}
-            sx={{
-                border: '1px solid rgba(0,0,0,0.05)',
-                borderRadius: 4,
-                overflow: 'hidden',
-                bgcolor: 'background.paper'
-            }}
-        >
+        <Box sx={{ width: '100%' }}>
             {editable && <MenuBar editor={editor} />}
             <Box sx={{ p: 0 }}>
                 <EditorContent editor={editor} />
             </Box>
-        </Paper>
+        </Box>
     );
 }

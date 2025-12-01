@@ -1,7 +1,7 @@
-import { ThemeProvider, CssBaseline } from '@mui/material';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { CssBaseline } from '@mui/material';
+import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import theme from './theme';
+import { ThemeProvider } from './context/ThemeContext';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
@@ -12,11 +12,14 @@ import Entry from './pages/Entry';
 import Journal from './pages/Journal';
 import Search from './pages/Search';
 
-
+const EntryWrapper = () => {
+  const { id } = useParams();
+  return <Entry key={id} />;
+};
 
 function App() {
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider>
       <CssBaseline />
       <AuthProvider>
         <Routes>
@@ -28,7 +31,7 @@ function App() {
           }>
             <Route index element={<Home />} />
             <Route path="journal" element={<Journal />} />
-            <Route path="journal/:id" element={<Entry />} />
+            <Route path="journal/:id" element={<EntryWrapper />} />
             <Route path="calendar" element={<Calendar />} />
             <Route path="search" element={<Search />} />
             <Route path="settings" element={<Settings />} />

@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Button, Grid, Paper, Card, CardContent } from '@mui/material';
-import { Plus, Book, Calendar } from 'lucide-react';
+import { Box, Typography, Button, Grid, Paper, Card, CardContent, useTheme } from '@mui/material';
+import { Plus, Book, Calendar, Search, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { JournalService } from '../services/journal';
 import { JournalEntry } from '../types';
 import { motion } from 'framer-motion';
+import { Calendar as CalendarIcon } from 'lucide-react';
 
 export default function Home() {
   const { user } = useAuth();
+  const theme = useTheme();
   const navigate = useNavigate();
   const [recentEntries, setRecentEntries] = useState<JournalEntry[]>([]);
 
@@ -33,7 +35,14 @@ export default function Home() {
   };
 
   return (
-    <Box>
+    <Box sx={{
+      height: '100%',
+      overflowY: 'auto',
+      p: 3,
+      '&::-webkit-scrollbar-track': {
+        my: 2
+      }
+    }}>
       <Box sx={{ mb: 6 }}>
         <Typography variant="h3" component="h1" sx={{ fontFamily: 'Playfair Display', fontWeight: 700, mb: 1 }}>
           {getGreeting()}, {user?.displayName?.split(' ')[0] || 'Helen'}
@@ -50,7 +59,7 @@ export default function Home() {
             sx={{
               p: 4,
               borderRadius: 4,
-              background: 'linear-gradient(135deg, #E0B0B6 0%, #D4C4B7 100%)',
+              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
               color: 'white',
               display: 'flex',
               flexDirection: 'column',
@@ -62,7 +71,7 @@ export default function Home() {
             }}
           >
             <Box sx={{ position: 'relative', zIndex: 1 }}>
-              <Typography variant="h5" sx={{ mb: 2, fontFamily: 'Playfair Display' }}>
+              <Typography variant="h5" sx={{ fontFamily: 'Playfair Display', mb: 2 }}>
                 Write a new entry
               </Typography>
               <Button
@@ -103,7 +112,7 @@ export default function Home() {
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
-              bgcolor: 'white',
+              bgcolor: 'background.paper',
               cursor: 'pointer',
               transition: 'transform 0.2s',
               '&:hover': { transform: 'translateY(-4px)' }
@@ -111,7 +120,7 @@ export default function Home() {
             onClick={() => navigate('/calendar')}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-              <Box sx={{ p: 1.5, borderRadius: 3, bgcolor: 'rgba(224, 176, 182, 0.15)', color: 'primary.main' }}>
+              <Box sx={{ p: 1.5, borderRadius: 3, bgcolor: 'action.hover', color: 'primary.main' }}>
                 <Calendar size={24} />
               </Box>
               <Typography variant="h6">Calendar</Typography>
