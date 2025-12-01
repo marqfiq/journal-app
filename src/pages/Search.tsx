@@ -71,10 +71,10 @@ export default function Search() {
                 sx={{
                     mb: 4,
                     '& .MuiOutlinedInput-root': {
-                        bgcolor: 'white',
+                        bgcolor: 'background.paper',
                         borderRadius: 4,
                         fontSize: '1.1rem',
-                        boxShadow: '0px 4px 20px rgba(0,0,0,0.05)',
+                        boxShadow: (theme) => theme.palette.mode === 'light' ? '0px 4px 20px rgba(0,0,0,0.05)' : '0px 4px 20px rgba(0,0,0,0.2)',
                         '& fieldset': { border: 'none' },
                         py: 1
                     }
@@ -95,11 +95,12 @@ export default function Search() {
                                     label={suggestion}
                                     onClick={() => handleSuggestionClick(suggestion)}
                                     sx={{
-                                        bgcolor: 'white',
-                                        border: '1px solid rgba(0,0,0,0.05)',
+                                        bgcolor: 'background.paper',
+                                        border: 1,
+                                        borderColor: 'divider',
                                         borderRadius: 2,
                                         cursor: 'pointer',
-                                        '&:hover': { bgcolor: 'rgba(224, 176, 182, 0.1)', borderColor: 'primary.main' }
+                                        '&:hover': { bgcolor: 'action.hover', borderColor: 'primary.main' }
                                     }}
                                 />
                             ))}

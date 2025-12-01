@@ -32,7 +32,14 @@ export default function Calendar() {
     : [];
 
   return (
-    <Box>
+    <Box sx={{
+      height: '100%',
+      overflowY: 'auto',
+      p: 3,
+      '&::-webkit-scrollbar-track': {
+        my: 2
+      }
+    }}>
       <Typography variant="h4" component="h1" sx={{ mb: 4 }}>
         Calendar
       </Typography>
@@ -43,48 +50,50 @@ export default function Calendar() {
         </Grid>
 
         <Grid size={{ xs: 12, md: 4 }}>
-          <Box sx={{ p: 3, bgcolor: 'white', borderRadius: 4, minHeight: 400 }}>
-            <Typography variant="h6" sx={{ mb: 2, fontFamily: 'Playfair Display' }}>
+          <Box sx={{ p: 3, bgcolor: 'background.paper', borderRadius: 4, height: '100%', maxHeight: 600, display: 'flex', flexDirection: 'column', border: 1, borderColor: 'divider' }}>
+            <Typography variant="h6" sx={{ mb: 2, fontFamily: 'Playfair Display', flexShrink: 0 }}>
               {selectedDate ? selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) : 'Select a date'}
             </Typography>
 
-            <Divider sx={{ mb: 3 }} />
+            <Divider sx={{ mb: 3, flexShrink: 0 }} />
 
-            {selectedDate ? (
-              selectedEntries.length > 0 ? (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  {selectedEntries.map(entry => (
-                    <motion.div key={entry.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                      <Box
-                        onClick={() => navigate(`/journal/${entry.id}`)}
-                        sx={{
-                          p: 2,
-                          bgcolor: 'background.default',
-                          borderRadius: 2,
-                          cursor: 'pointer',
-                          '&:hover': { bgcolor: 'rgba(0,0,0,0.02)' }
-                        }}
-                      >
-                        <Typography variant="body2" noWrap sx={{ fontWeight: 500 }}>
-                          {entry.text.replace(/<[^>]*>?/gm, '')}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {new Date(entry.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </Typography>
-                      </Box>
-                    </motion.div>
-                  ))}
-                </Box>
+            <Box sx={{ flexGrow: 1, overflowY: 'auto', pr: 1 }}>
+              {selectedDate ? (
+                selectedEntries.length > 0 ? (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {selectedEntries.map(entry => (
+                      <motion.div key={entry.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                        <Box
+                          onClick={() => navigate(`/journal/${entry.id}`)}
+                          sx={{
+                            p: 2,
+                            bgcolor: 'background.default',
+                            borderRadius: 2,
+                            cursor: 'pointer',
+                            '&:hover': { bgcolor: 'action.hover' }
+                          }}
+                        >
+                          <Typography variant="body2" noWrap sx={{ fontWeight: 500 }}>
+                            {entry.text.replace(/<[^>]*>?/gm, '')}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {new Date(entry.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </Typography>
+                        </Box>
+                      </motion.div>
+                    ))}
+                  </Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>
+                    No entries for this day.
+                  </Typography>
+                )
               ) : (
                 <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>
-                  No entries for this day.
+                  Click on a date to view entries.
                 </Typography>
-              )
-            ) : (
-              <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>
-                Click on a date to view entries.
-              </Typography>
-            )}
+              )}
+            </Box>
           </Box>
         </Grid>
       </Grid>

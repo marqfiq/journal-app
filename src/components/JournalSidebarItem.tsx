@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, Paper, Chip } from '@mui/material';
+import { Box, Typography, Paper, Chip, useTheme, useMediaQuery } from '@mui/material';
 import { JournalEntry } from '../types';
 import { motion } from 'framer-motion';
 
@@ -25,8 +25,11 @@ export default function JournalSidebarItem({ entry, isSelected, onClick }: Journ
         return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
     };
 
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
     return (
-        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+        <motion.div whileHover={{ scale: isMobile ? 1 : 1.02 }} whileTap={{ scale: 0.98 }}>
             <Paper
                 elevation={0}
                 onClick={onClick}
@@ -35,11 +38,11 @@ export default function JournalSidebarItem({ entry, isSelected, onClick }: Journ
                     mb: 2,
                     cursor: 'pointer',
                     borderRadius: 3,
-                    bgcolor: isSelected ? 'primary.main' : 'white',
-                    color: isSelected ? 'white' : 'text.primary',
+                    bgcolor: isSelected ? 'primary.main' : 'background.paper',
+                    color: isSelected ? 'primary.contrastText' : 'text.primary',
                     transition: 'all 0.2s',
                     '&:hover': {
-                        bgcolor: isSelected ? 'primary.main' : 'rgba(224, 176, 182, 0.1)',
+                        bgcolor: isSelected ? 'primary.main' : 'action.hover',
                     }
                 }}
             >
@@ -54,8 +57,8 @@ export default function JournalSidebarItem({ entry, isSelected, onClick }: Journ
                             sx={{
                                 height: 20,
                                 fontSize: '0.7rem',
-                                bgcolor: isSelected ? 'rgba(255,255,255,0.2)' : 'rgba(224, 176, 182, 0.2)',
-                                color: isSelected ? 'white' : 'primary.main'
+                                bgcolor: isSelected ? 'rgba(255,255,255,0.2)' : 'action.hover',
+                                color: isSelected ? 'inherit' : 'primary.main'
                             }}
                         />
                     )}

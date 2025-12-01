@@ -41,7 +41,7 @@ export default function Journal() {
     };
 
     return (
-        <Box sx={{ height: 'calc(100vh - 100px)', display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 3 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                 <Typography variant="h4" component="h1" sx={{ fontFamily: 'Playfair Display', fontWeight: 700 }}>
                     My Journal
@@ -56,13 +56,16 @@ export default function Journal() {
                 </Button>
             </Box>
 
-            <Grid container spacing={3} sx={{ flexGrow: 1, overflow: 'hidden' }}>
+            <Grid container spacing={isMobile ? 0 : 3} sx={{ flexGrow: 1, overflow: 'hidden' }}>
                 {/* Sidebar List */}
                 <Grid size={{ xs: 12, md: 4 }} sx={{
                     height: '100%',
                     overflowY: 'auto',
                     pr: { md: 2 },
-                    display: (isMobile && selectedEntryId) ? 'none' : 'block'
+                    display: (isMobile && selectedEntryId) ? 'none' : 'block',
+                    '&::-webkit-scrollbar-track': {
+                        my: 2
+                    }
                 }}>
                     {entries.map((entry) => (
                         <JournalSidebarItem
@@ -100,9 +103,14 @@ export default function Journal() {
                                         p: 4,
                                         height: '100%',
                                         borderRadius: 4,
-                                        bgcolor: 'white',
+                                        bgcolor: 'background.paper',
                                         overflowY: 'auto',
-                                        position: 'relative'
+                                        position: 'relative',
+                                        border: 1,
+                                        borderColor: 'divider',
+                                        '&::-webkit-scrollbar-track': {
+                                            my: 2
+                                        }
                                     }}
                                 >
                                     {isMobile && (
@@ -149,7 +157,7 @@ export default function Journal() {
                                     <Divider sx={{ mb: 3 }} />
 
                                     <div
-                                        className="prose prose-pink max-w-none"
+                                        className="prose prose-pink max-w-none ProseMirror"
                                         dangerouslySetInnerHTML={{ __html: selectedEntry.text }}
                                     />
 
@@ -169,9 +177,11 @@ export default function Journal() {
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 color: 'text.secondary',
-                                bgcolor: 'rgba(255,255,255,0.5)',
+                                bgcolor: 'background.paper',
                                 borderRadius: 4,
-                                border: '2px dashed rgba(0,0,0,0.05)'
+                                border: 2,
+                                borderColor: 'divider',
+                                borderStyle: 'dashed'
                             }}>
                                 <Typography>Select an entry to read</Typography>
                             </Box>
