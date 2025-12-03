@@ -189,6 +189,22 @@ export default function Layout() {
                         {!isCollapsed && <ListItemText primary="Settings" sx={{ opacity: isCollapsed ? 0 : 1 }} />}
                     </ListItemButton>
                 </Tooltip>
+                <Fab
+                    color="primary"
+                    aria-label="add"
+                    sx={{
+                        position: 'absolute',
+                        bottom: 32,
+                        right: 32,
+                        boxShadow: `0px 4px 20px ${theme.palette.primary.main}66`,
+                        '&:hover': { transform: 'scale(1.05)' },
+                        transition: 'transform 0.2s',
+                        zIndex: 10
+                    }}
+                    onClick={() => navigate('/journal/new')}
+                >
+                    <Plus color="white" />
+                </Fab>
             </Box>
         </Box>
     );
@@ -374,7 +390,7 @@ export default function Layout() {
                     }}>
                         <AnimatePresence mode="wait">
                             <motion.div
-                                key={location.pathname}
+                                key={location.pathname.startsWith('/journal/') ? 'journal-entry' : location.pathname}
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -10 }}
@@ -385,23 +401,6 @@ export default function Layout() {
                             </motion.div>
                         </AnimatePresence>
                     </Box>
-
-                    <Fab
-                        color="primary"
-                        aria-label="add"
-                        sx={{
-                            position: 'absolute',
-                            bottom: 32,
-                            right: 32,
-                            boxShadow: `0px 4px 20px ${theme.palette.primary.main}66`,
-                            '&:hover': { transform: 'scale(1.05)' },
-                            transition: 'transform 0.2s',
-                            zIndex: 10
-                        }}
-                        onClick={() => navigate('/journal/new')}
-                    >
-                        <Plus color="white" />
-                    </Fab>
                 </Box>
             </Box>
         </Box>

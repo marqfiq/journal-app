@@ -6,6 +6,7 @@ import { JournalEntry } from '../types';
 import { JournalService } from '../services/journal';
 import { useAuth } from '../context/AuthContext';
 import JournalSidebarItem from '../components/JournalSidebarItem';
+import DeleteDialog from '../components/DeleteDialog';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Journal() {
@@ -15,6 +16,8 @@ export default function Journal() {
     const navigate = useNavigate();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
 
     useEffect(() => {
         async function loadEntries() {
@@ -30,14 +33,21 @@ export default function Journal() {
 
     const selectedEntry = entries.find(e => e.id === selectedEntryId);
 
-    const handleDelete = async (id: string) => {
-        if (window.confirm('Are you sure you want to delete this memory?')) {
-            await JournalService.deleteEntry(id);
-            setEntries(entries.filter(e => e.id !== id));
-            if (selectedEntryId === id) {
-                setSelectedEntryId(null);
-            }
+    const handleDeleteClick = (id: string) => {
+        setEntryToDelete(id);
+        setDeleteDialogOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!entryToDelete) return;
+
+        await JournalService.deleteEntry(entryToDelete);
+        setEntries(entries.filter(e => e.id !== entryToDelete));
+        if (selectedEntryId === entryToDelete) {
+            setSelectedEntryId(null);
         }
+        setDeleteDialogOpen(false);
+        setEntryToDelete(null);
     };
 
     return (
@@ -148,7 +158,7 @@ export default function Journal() {
                                             <IconButton onClick={() => navigate(`/journal/${selectedEntry.id}`)} color="primary">
                                                 <Edit2 size={20} />
                                             </IconButton>
-                                            <IconButton onClick={() => handleDelete(selectedEntry.id)} color="error">
+                                            <IconButton onClick={() => handleDeleteClick(selectedEntry.id)} color="error">
                                                 <Trash2 size={20} />
                                             </IconButton>
                                         </Box>
@@ -189,6 +199,14 @@ export default function Journal() {
                     </AnimatePresence>
                 </Grid>
             </Grid>
+
+            <DeleteDialog
+                open={deleteDialogOpen}
+                onClose={() => setDeleteDialogOpen(false)}
+                onConfirm={confirmDelete}
+                title="Delete Memory?"
+                description="Are you sure you want to delete this journal entry? This action cannot be undone."
+            />
         </Box>
     );
 }

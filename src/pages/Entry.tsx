@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Box, Button, Typography, IconButton, Paper, Chip, Stack, CircularProgress } from '@mui/material';
-import { ArrowLeft, Trash2, Calendar as CalendarIcon, Check, CloudOff, AlertCircle } from 'lucide-react';
+import { Box, Button, Typography, IconButton, Paper, Chip, Stack, Tooltip } from '@mui/material';
+import { ArrowLeft, Trash2, Calendar as CalendarIcon, Check, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { JournalService } from '../services/journal';
 import EntryEditor from '../components/EntryEditor';
+import DeleteDialog from '../components/DeleteDialog';
 import { JournalEntry } from '../types';
 import { motion } from 'framer-motion';
 import { useAutosave } from '../hooks/useAutosave';
@@ -15,14 +16,24 @@ export default function Entry() {
   const location = useLocation();
   const { user } = useAuth();
   const isNew = id === 'new';
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  const [entry, setEntry] = useState<Partial<JournalEntry>>({
-    text: '',
-    mood: 3,
-    tags: [],
-    date: Date.now()
+  const [entry, setEntry] = useState<Partial<JournalEntry>>(() => {
+    if (location.state?.entry) {
+      return location.state.entry;
+    }
+    return {
+      text: '',
+      mood: 3,
+      tags: [],
+      date: Date.now()
+    };
   });
-  const [loading, setLoading] = useState(!isNew);
+
+  const [loading, setLoading] = useState(() => {
+    if (location.state?.entry) return false;
+    return !isNew;
+  });
 
   // Load entry data
   useEffect(() => {
@@ -36,16 +47,16 @@ export default function Entry() {
         return;
       }
 
-      // 2. If new, try to load from local storage backup
+      // 2. If new, STRICTLY reset to default state and ignore local backup to prevent ghost data
       if (isNew) {
-        const localBackup = localStorage.getItem('entry-new');
-        if (localBackup) {
-          try {
-            setEntry(JSON.parse(localBackup));
-          } catch (e) {
-            console.error("Failed to parse local backup", e);
-          }
-        }
+        setEntry({
+          text: '',
+          mood: 3,
+          tags: [],
+          date: Date.now()
+        });
+        // Explicitly clear any potential "new" backup to ensure fresh start
+        localStorage.removeItem('entry-new');
         setLoading(false);
         return;
       }
@@ -97,7 +108,7 @@ export default function Entry() {
     }
   };
 
-  const { status, lastSaved } = useAutosave({
+  const { status, lastSaved, retry } = useAutosave({
     data: entry,
     onSave: handleAutosave,
     key: isNew ? 'entry-new' : `entry-${id}`,
@@ -105,7 +116,7 @@ export default function Entry() {
   });
 
   const handleDelete = async () => {
-    if (!id || !confirm("Are you sure you want to delete this entry?")) return;
+    if (!id) return;
     try {
       await JournalService.deleteEntry(id);
       localStorage.removeItem(`entry-${id}`);
@@ -137,35 +148,28 @@ export default function Entry() {
 
           <Stack direction="row" spacing={2} alignItems="center">
             {/* Autosave Status Indicator */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary', opacity: 0.8 }}>
-              {status === 'saving' && (
-                <>
-                  <CircularProgress size={14} thickness={5} color="inherit" />
-                  <Typography variant="caption">Saving...</Typography>
-                </>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 40, justifyContent: 'flex-end' }}>
+              {(status === 'unsaved' || status === 'saving' || status === 'offline') && (
+                <Tooltip title={status === 'offline' ? "Offline" : "Saving..."}>
+                  <Check size={20} color="#9e9e9e" />
+                </Tooltip>
               )}
-              {status === 'saved' && (
-                <>
-                  <Check size={16} />
-                  <Typography variant="caption">Saved</Typography>
-                </>
-              )}
-              {status === 'offline' && (
-                <>
-                  <CloudOff size={16} />
-                  <Typography variant="caption">Offline</Typography>
-                </>
+              {(status === 'saved' || status === 'idle') && (
+                <Tooltip title="Saved">
+                  <Check size={20} color="#e0b0b6" strokeWidth={2.5} />
+                </Tooltip>
               )}
               {status === 'error' && (
-                <>
-                  <AlertCircle size={16} color="error" />
-                  <Typography variant="caption" color="error">Error saving</Typography>
-                </>
+                <Tooltip title="Failed to save. Click to retry.">
+                  <IconButton size="small" onClick={retry} sx={{ p: 0.5 }}>
+                    <AlertCircle size={20} color="#d32f2f" />
+                  </IconButton>
+                </Tooltip>
               )}
             </Box>
 
             {!isNew && (
-              <IconButton onClick={handleDelete} color="error" size="small">
+              <IconButton onClick={() => setDeleteDialogOpen(true)} color="error" size="small">
                 <Trash2 size={20} />
               </IconButton>
             )}
@@ -210,6 +214,14 @@ export default function Entry() {
           </Paper>
         </motion.div>
       </Box>
-    </Box>
+
+      <DeleteDialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        onConfirm={handleDelete}
+        title="Delete Entry?"
+        description="Are you sure you want to delete this journal entry? This action cannot be undone."
+      />
+    </Box >
   );
 }
