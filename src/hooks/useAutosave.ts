@@ -8,11 +8,12 @@ interface AutosaveOptions<T> {
     key?: string; // LocalStorage key
 }
 
-export type AutosaveStatus = 'idle' | 'saving' | 'saved' | 'error' | 'offline';
+export type AutosaveStatus = 'idle' | 'unsaved' | 'saving' | 'saved' | 'error' | 'offline';
 
-export function useAutosave<T>({ data, onSave, interval = 1500, saveOnUnmount = true, key }: AutosaveOptions<T>) {
+export function useAutosave<T>({ data, onSave, interval = 2000, saveOnUnmount = true, key }: AutosaveOptions<T>) {
     const [status, setStatus] = useState<AutosaveStatus>('idle');
     const [lastSaved, setLastSaved] = useState<Date | null>(null);
+    const [retryTrigger, setRetryTrigger] = useState(0);
     const dataRef = useRef(data);
     const previousDataRef = useRef(data);
     const isOnline = useRef(navigator.onLine);
@@ -26,8 +27,6 @@ export function useAutosave<T>({ data, onSave, interval = 1500, saveOnUnmount = 
     useEffect(() => {
         const handleOnline = () => {
             isOnline.current = true;
-            // Trigger save if we have unsaved changes? 
-            // For now, let's just update status if we were offline
             if (status === 'offline') {
                 setStatus('idle');
             }
@@ -59,8 +58,8 @@ export function useAutosave<T>({ data, onSave, interval = 1500, saveOnUnmount = 
 
     // Debounced Cloud Save
     useEffect(() => {
-        // Skip if data hasn't changed (deep comparison simplistic for now, but effective for small objects)
-        if (JSON.stringify(data) === JSON.stringify(previousDataRef.current)) {
+        // Skip if data hasn't changed, unless forced by retry
+        if (retryTrigger === 0 && JSON.stringify(data) === JSON.stringify(previousDataRef.current)) {
             return;
         }
 
@@ -69,17 +68,16 @@ export function useAutosave<T>({ data, onSave, interval = 1500, saveOnUnmount = 
             return;
         }
 
-        setStatus('saving');
+        // Immediate feedback: Unsaved changes
+        setStatus('unsaved');
 
         const handler = setTimeout(async () => {
+            setStatus('saving');
             try {
                 await onSave(data);
                 setStatus('saved');
                 setLastSaved(new Date());
                 previousDataRef.current = data;
-
-                // Clear local storage backup on successful cloud save? 
-                // Or keep it as a cache? Let's keep it for now, maybe clear on explicit "exit" or "delete".
             } catch (error) {
                 console.error('Autosave failed', error);
                 setStatus('error');
@@ -89,7 +87,9 @@ export function useAutosave<T>({ data, onSave, interval = 1500, saveOnUnmount = 
         return () => {
             clearTimeout(handler);
         };
-    }, [data, interval, onSave]);
+    }, [data, interval, onSave, retryTrigger]);
 
-    return { status, lastSaved };
+    const retry = () => setRetryTrigger(prev => prev + 1);
+
+    return { status, lastSaved, retry };
 }

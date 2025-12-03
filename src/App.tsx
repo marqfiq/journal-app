@@ -1,5 +1,5 @@
 import { CssBaseline } from '@mui/material';
-import { Routes, Route, Navigate, useParams } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import Layout from './components/Layout';
@@ -11,11 +11,6 @@ import Settings from './pages/Settings';
 import Entry from './pages/Entry';
 import Journal from './pages/Journal';
 import Search from './pages/Search';
-
-const EntryWrapper = () => {
-  const { id } = useParams();
-  return <Entry key={id} />;
-};
 
 function App() {
   return (
@@ -31,7 +26,7 @@ function App() {
           }>
             <Route index element={<Home />} />
             <Route path="journal" element={<Journal />} />
-            <Route path="journal/:id" element={<EntryWrapper />} />
+            <Route path="journal/:id" element={<Entry />} />
             <Route path="calendar" element={<Calendar />} />
             <Route path="search" element={<Search />} />
             <Route path="settings" element={<Settings />} />
