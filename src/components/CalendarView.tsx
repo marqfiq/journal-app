@@ -1,8 +1,10 @@
-import React, { useState, useMemo } from 'react';
-import { Box, Typography, IconButton, Grid, Paper, Tooltip, Badge } from '@mui/material';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Box, Typography, IconButton, Grid, Paper, useTheme, Popover, Button } from '@mui/material';
+import { ChevronLeft, ChevronRight, Flower } from 'lucide-react';
 import { JournalEntry } from '../types';
 import { motion } from 'framer-motion';
+import { SYSTEM_STICKERS } from '../constants/stickers';
+import { useStickers } from '../hooks/useStickers';
 
 interface CalendarViewProps {
     entries: JournalEntry[];
@@ -13,6 +15,29 @@ const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export default function CalendarView({ entries, onDateSelect }: CalendarViewProps) {
     const [currentDate, setCurrentDate] = useState(new Date());
+    const { stickers } = useStickers();
+    const theme = useTheme();
+    const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
+
+    const handleMonthClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleClose = () => {
+        setAnchorEl(null);
+    };
+
+    const open = Boolean(anchorEl);
+    const id = open ? 'month-year-popover' : undefined;
+
+    const handleYearChange = (increment: number) => {
+        setCurrentDate(new Date(currentDate.getFullYear() + increment, currentDate.getMonth()));
+    };
+
+    const handleMonthSelect = (monthIndex: number) => {
+        setCurrentDate(new Date(currentDate.getFullYear(), monthIndex));
+        handleClose();
+    };
 
     const { days, monthLabel } = useMemo(() => {
         const year = currentDate.getFullYear();
@@ -60,20 +85,85 @@ export default function CalendarView({ entries, onDateSelect }: CalendarViewProp
     };
 
     return (
-        <Paper elevation={0} sx={{ p: 4, borderRadius: 4, bgcolor: 'background.paper' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4 }}>
+        <Box sx={{ p: 0, width: '100%' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                 <IconButton onClick={handlePrevMonth}>
                     <ChevronLeft />
                 </IconButton>
-                <Typography variant="h5" sx={{ fontFamily: 'Playfair Display', fontWeight: 600 }}>
-                    {monthLabel}
-                </Typography>
+                <Button
+                    aria-describedby={id}
+                    onClick={handleMonthClick}
+                    sx={{
+                        textTransform: 'none',
+                        color: 'text.primary',
+                        '&:hover': { bgcolor: 'action.hover' }
+                    }}
+                >
+                    <Typography variant="h5" sx={{ fontFamily: 'Playfair Display', fontWeight: 600 }}>
+                        {monthLabel}
+                    </Typography>
+                </Button>
+                <Popover
+                    id={id}
+                    open={open}
+                    anchorEl={anchorEl}
+                    onClose={handleClose}
+                    anchorOrigin={{
+                        vertical: 'bottom',
+                        horizontal: 'center',
+                    }}
+                    transformOrigin={{
+                        vertical: 'top',
+                        horizontal: 'center',
+                    }}
+                    slotProps={{
+                        paper: {
+                            sx: {
+                                p: 2,
+                                width: 300,
+                                borderRadius: 4
+                            }
+                        }
+                    }}
+                >
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                        <IconButton onClick={() => handleYearChange(-1)} size="small">
+                            <ChevronLeft size={20} />
+                        </IconButton>
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                            {currentDate.getFullYear()}
+                        </Typography>
+                        <IconButton onClick={() => handleYearChange(1)} size="small">
+                            <ChevronRight size={20} />
+                        </IconButton>
+                    </Box>
+                    <Grid container spacing={1}>
+                        {Array.from({ length: 12 }).map((_, index) => (
+                            <Grid size={4} key={index}>
+                                <Button
+                                    fullWidth
+                                    onClick={() => handleMonthSelect(index)}
+                                    sx={{
+                                        borderRadius: 2,
+                                        bgcolor: currentDate.getMonth() === index ? 'primary.main' : 'transparent',
+                                        color: currentDate.getMonth() === index ? 'primary.contrastText' : 'text.primary',
+                                        '&:hover': {
+                                            bgcolor: currentDate.getMonth() === index ? 'primary.dark' : 'action.hover'
+                                        }
+                                    }}
+                                >
+                                    {new Date(2000, index).toLocaleDateString('en-US', { month: 'short' })}
+                                </Button>
+                            </Grid>
+                        ))}
+                    </Grid>
+                </Popover>
                 <IconButton onClick={handleNextMonth}>
                     <ChevronRight />
                 </IconButton>
             </Box>
 
-            <Grid container spacing={1}>
+            <Grid container spacing={1} sx={{ maxWidth: 600, mx: 'auto' }}>
                 {DAYS.map(day => (
                     <Grid size={12 / 7} key={day} sx={{ textAlign: 'center', mb: 2 }}>
                         <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
@@ -91,44 +181,87 @@ export default function CalendarView({ entries, onDateSelect }: CalendarViewProp
                     const hasEntry = dayEntries.length > 0;
                     const isToday = new Date().toDateString() === date.toDateString();
 
+                    // Find sticker if any entry has one
+                    const stickerEntry = dayEntries.find(e => e.sticker_id);
+                    const sticker = stickerEntry ? (
+                        stickers.find(s => s.id === stickerEntry.sticker_id) ||
+                        SYSTEM_STICKERS.find(s => s.id === stickerEntry.sticker_id) ||
+                        (stickerEntry.sticker_id?.startsWith('http') ? { id: stickerEntry.sticker_id, url: stickerEntry.sticker_id, owner_id: 'unknown' } : null)
+                    ) : null;
+
                     return (
                         <Grid size={12 / 7} key={date.toISOString()}>
-                            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                                 <Box
                                     onClick={() => onDateSelect(date)}
                                     sx={{
-                                        height: 40,
-                                        width: 40,
-                                        mx: 'auto',
                                         display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        borderRadius: '50%',
+                                        flexDirection: 'column',
                                         cursor: 'pointer',
-                                        bgcolor: isToday ? 'primary.main' : (hasEntry ? 'primary.light' : 'transparent'),
-                                        color: isToday ? 'primary.contrastText' : (hasEntry ? 'primary.main' : 'text.primary'),
-                                        fontWeight: (isToday || hasEntry) ? 600 : 400,
-                                        border: isToday ? 'none' : '1px solid transparent',
-                                        opacity: hasEntry && !isToday ? 0.2 : 1,
+                                        borderRadius: 1,
+                                        overflow: 'hidden',
+                                        bgcolor: 'transparent',
                                         '&:hover': {
-                                            bgcolor: isToday ? 'primary.dark' : 'action.hover'
+                                            bgcolor: 'action.hover'
                                         }
                                     }}
                                 >
-                                    {date.getDate()}
-                                </Box>
-                                {hasEntry && (
-                                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 0.5, gap: 0.5 }}>
-                                        {dayEntries.slice(0, 3).map((_, i) => (
-                                            <Box key={i} sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: 'primary.main' }} />
-                                        ))}
+                                    {/* Top Strip with Day Number */}
+                                    <Box sx={{
+                                        p: 0.25,
+                                        display: 'flex',
+                                        justifyContent: 'flex-start'
+                                    }}>
+                                        <Box sx={{
+                                            width: 28,
+                                            height: 28,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            borderRadius: '50%',
+                                            bgcolor: isToday ? 'primary.main' : 'transparent',
+                                            color: isToday ? 'primary.contrastText' : 'text.primary',
+                                            fontWeight: isToday ? 600 : 400,
+                                            fontSize: '0.9rem'
+                                        }}>
+                                            {date.getDate()}
+                                        </Box>
                                     </Box>
-                                )}
+
+                                    {/* Bottom Square for Sticker/Stamp */}
+                                    <Box sx={{
+                                        width: '100%',
+                                        aspectRatio: '1/1',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        p: 0.25
+                                    }}>
+                                        {sticker ? (
+                                            <Box
+                                                component="img"
+                                                src={sticker.url}
+                                                sx={{
+                                                    width: '100%',
+                                                    height: '100%',
+                                                    objectFit: 'contain',
+                                                    filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.1))'
+                                                }}
+                                            />
+                                        ) : hasEntry ? (
+                                            <Flower
+                                                size={32}
+                                                color={theme.palette.primary.main}
+                                                style={{ opacity: 0.6 }}
+                                            />
+                                        ) : null}
+                                    </Box>
+                                </Box>
                             </motion.div>
                         </Grid>
                     );
                 })}
             </Grid>
-        </Paper>
+        </Box>
     );
 }

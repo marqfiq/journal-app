@@ -92,7 +92,7 @@ export default function EntryList() {
                     <Typography variant="body2">Start writing to create your first memory.</Typography>
                 </Box>
             ) : (
-                <Grid container spacing={3}>
+                <Grid container spacing={3} sx={{ p: 3, mx: -3, width: 'calc(100% + 48px)' }}>
                     {filteredEntries.map((entry, index) => (
                         <Grid size={{ xs: 12 }} key={entry.id}>
                             <motion.div

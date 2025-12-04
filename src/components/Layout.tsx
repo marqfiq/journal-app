@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, IconButton, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography, useTheme, useMediaQuery, Fab, Tooltip } from '@mui/material';
+import { Box, IconButton, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography, useTheme, useMediaQuery, Fab, Tooltip, alpha } from '@mui/material';
 import { Menu as MenuIcon, Book, Calendar, Search, Home, Plus, Settings, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import AppIcon from './AppIcon';
 import { useNavigate, useLocation, useOutlet } from 'react-router-dom';
@@ -123,10 +123,10 @@ export default function Layout() {
                                         justifyContent: isCollapsed ? 'center' : 'initial',
                                         px: 2.5,
                                         borderRadius: 3,
-                                        bgcolor: isActive ? 'rgba(224, 176, 182, 0.15)' : 'transparent',
+                                        bgcolor: isActive ? alpha(theme.palette.primary.main, 0.15) : 'transparent',
                                         color: isActive ? 'primary.main' : 'text.primary',
                                         '&:hover': {
-                                            bgcolor: 'rgba(224, 176, 182, 0.08)',
+                                            bgcolor: alpha(theme.palette.primary.main, 0.08),
                                         },
                                     }}
                                 >
@@ -286,7 +286,7 @@ export default function Layout() {
                                                 justifyContent: 'center',
                                                 px: 2.5,
                                                 borderRadius: 3,
-                                                bgcolor: isActive ? 'rgba(224, 176, 182, 0.15)' : 'transparent',
+                                                bgcolor: isActive ? alpha(theme.palette.primary.main, 0.15) : 'transparent',
                                                 color: isActive ? 'primary.main' : 'text.primary',
                                                 position: 'relative'
                                             }}

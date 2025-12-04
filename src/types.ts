@@ -15,9 +15,13 @@ export interface JournalEntry {
 
   // Metadata (Grouped for cleaner React props)
   mood: number;        // 0-5 or 1-10 scale
-  
+
+  // New fields for enhancements
+  sticker_id?: string | null; // ID of the selected sticker
+  image_urls?: string[]; // Additional images
+
   weather?: {          // Optional, as not every entry has weather
-    temperature: number; 
+    temperature: number;
     condition: string; // e.g. "Broken Clouds"
     icon?: string;     // Keep the legacy icon code or map to a new one
   };
@@ -34,5 +38,11 @@ export interface JournalEntry {
     artist: string;
     title: string;
   };
+}
+
+export interface Sticker {
+  id: string;
+  url: string;
+  owner_id: string; // 'system' or userId
 }
 
