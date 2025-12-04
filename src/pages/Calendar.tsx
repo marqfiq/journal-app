@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Grid, Divider } from '@mui/material';
 import CalendarView from '../components/CalendarView';
+import JournalSidebarItem from '../components/JournalSidebarItem';
 import { JournalService } from '../services/journal';
 import { useAuth } from '../context/AuthContext';
 import { JournalEntry } from '../types';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 
 export default function Calendar() {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -28,7 +28,7 @@ export default function Calendar() {
       return d.getDate() === selectedDate.getDate() &&
         d.getMonth() === selectedDate.getMonth() &&
         d.getFullYear() === selectedDate.getFullYear();
-    })
+    }).sort((a, b) => a.date - b.date)
     : [];
 
   return (
@@ -40,47 +40,37 @@ export default function Calendar() {
         my: 2
       }
     }}>
-      <Typography variant="h4" component="h1" sx={{ mb: 4 }}>
-        Calendar
-      </Typography>
 
-      <Grid container spacing={4}>
-        <Grid size={{ xs: 12, md: 8 }}>
+
+      <Grid container spacing={4} sx={{ height: '100%' }}>
+        <Grid size={{ xs: 12, md: 8 }} sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+          <Typography variant="h4" component="h1" sx={{ mb: 4, fontFamily: 'Playfair Display', fontWeight: 700 }}>
+            Calendar
+          </Typography>
           <CalendarView entries={entries} onDateSelect={setSelectedDate} />
         </Grid>
 
         <Grid size={{ xs: 12, md: 4 }}>
-          <Box sx={{ p: 3, bgcolor: 'background.paper', borderRadius: 4, height: '100%', maxHeight: 600, display: 'flex', flexDirection: 'column', border: 1, borderColor: 'divider' }}>
+          <Box sx={{ p: 3, borderRadius: 4, height: '100%', display: 'flex', flexDirection: 'column', border: 1, borderColor: 'divider' }}>
             <Typography variant="h6" sx={{ mb: 2, fontFamily: 'Playfair Display', flexShrink: 0 }}>
               {selectedDate ? selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) : 'Select a date'}
             </Typography>
 
             <Divider sx={{ mb: 3, flexShrink: 0 }} />
 
-            <Box sx={{ flexGrow: 1, overflowY: 'auto', pr: 1 }}>
+            <Box sx={{ flexGrow: 1, overflowY: 'auto', pr: 1, p: 2, mx: -2 }}>
               {selectedDate ? (
                 selectedEntries.length > 0 ? (
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     {selectedEntries.map(entry => (
-                      <motion.div key={entry.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                        <Box
-                          onClick={() => navigate(`/journal/${entry.id}`)}
-                          sx={{
-                            p: 2,
-                            bgcolor: 'background.default',
-                            borderRadius: 2,
-                            cursor: 'pointer',
-                            '&:hover': { bgcolor: 'action.hover' }
-                          }}
-                        >
-                          <Typography variant="body2" noWrap sx={{ fontWeight: 500 }}>
-                            {entry.text.replace(/<[^>]*>?/gm, '')}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {new Date(entry.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </Typography>
-                        </Box>
-                      </motion.div>
+                      <JournalSidebarItem
+                        key={entry.id}
+                        entry={entry}
+                        isSelected={false}
+                        onClick={() => navigate(`/journal/${entry.id}`)}
+                        className="glassmorphism"
+                        sx={{ border: 'none' }}
+                      />
                     ))}
                   </Box>
                 ) : (
