@@ -38,7 +38,7 @@ export const JournalService = {
                 date: Date.now(),
                 dayKey,
                 text: '',
-                photos: [],
+
                 tags: [],
                 mood: 3, // Default neutral
                 ...entryData
@@ -85,7 +85,22 @@ export const JournalService = {
     async updateEntry(id: string, updates: Partial<JournalEntry>) {
         try {
             const entryRef = doc(db, COLLECTION_NAME, id);
-            await updateDoc(entryRef, cleanData(updates));
+
+            // Create a copy of updates to modify
+            const dataToUpdate = { ...updates };
+
+            // Remove immutable fields that shouldn't be updated directly
+            delete dataToUpdate.id;
+            delete dataToUpdate.userId;
+
+            // If date is changed, we might need to update dayKey
+            if (dataToUpdate.date) {
+                const d = new Date(dataToUpdate.date);
+                const dayKey = `${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
+                dataToUpdate.dayKey = dayKey;
+            }
+
+            await updateDoc(entryRef, cleanData(dataToUpdate));
         } catch (error) {
             console.error("Error updating document: ", error);
             throw error;

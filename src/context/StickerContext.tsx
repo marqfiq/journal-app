@@ -9,6 +9,7 @@ interface StickerContextType {
     loading: boolean;
     addSticker: (file: File) => Promise<void>;
     removeSticker: (stickerOrUrl: Sticker | string) => Promise<void>;
+    restoreStickers: () => Promise<void>;
     canManage: boolean;
 }
 
@@ -99,6 +100,11 @@ export function StickerProvider({ children }: { children: ReactNode }) {
             loading,
             addSticker,
             removeSticker,
+            restoreStickers: async () => {
+                if (!user) return;
+                await StickerService.restoreStickersFromStorage(user.uid);
+                await loadStickers(user.uid, `user_stickers_${user.uid}`);
+            },
             canManage: !!user
         }}>
             {children}

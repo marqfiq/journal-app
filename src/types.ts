@@ -7,7 +7,7 @@ export interface JournalEntry {
 
   // Core Content
   text: string;        // HTML or Markdown from the editor
-  photos: string[];    // Array of public Firebase Storage URLs
+
 
   // Time & Search
   date: number;        // Unix Timestamp (ms). Single source of truth for time.

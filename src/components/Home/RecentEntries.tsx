@@ -62,9 +62,9 @@ const RecentEntries = () => {
                 {formatDate(entry.date)}
               </span>
             </div>
-            {entry.photos && entry.photos.length > 0 && (
+            {entry.image_urls && entry.image_urls.length > 0 && (
               <div className="flex gap-1">
-                {entry.photos.slice(0, 3).map((photo, idx) => (
+                {entry.image_urls.slice(0, 3).map((photo, idx) => (
                   <img
                     key={idx}
                     src={photo}
@@ -72,9 +72,9 @@ const RecentEntries = () => {
                     className="w-8 h-8 rounded object-cover border border-white/20"
                   />
                 ))}
-                {entry.photos.length > 3 && (
+                {entry.image_urls.length > 3 && (
                   <div className="w-8 h-8 rounded bg-white/20 flex items-center justify-center text-xs text-gray-600">
-                    +{entry.photos.length - 3}
+                    +{entry.image_urls.length - 3}
                   </div>
                 )}
               </div>
