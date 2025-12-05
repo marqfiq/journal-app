@@ -15,9 +15,9 @@ import Search from './pages/Search';
 
 function App() {
   return (
-    <ThemeProvider>
-      <CssBaseline />
-      <AuthProvider>
+    <AuthProvider>
+      <ThemeProvider>
+        <CssBaseline />
         <StickerProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
@@ -36,8 +36,8 @@ function App() {
             </Route>
           </Routes>
         </StickerProvider>
-      </AuthProvider>
-    </ThemeProvider>
+      </ThemeProvider>
+    </AuthProvider>
   );
 }
 

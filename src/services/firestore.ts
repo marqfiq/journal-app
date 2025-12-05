@@ -39,7 +39,7 @@ const documentToEntry = (doc: QueryDocumentSnapshot<DocumentData>): JournalEntry
     id: doc.id,
     userId: data.userId,
     text: data.text,
-    photos: data.photos || [],
+    image_urls: data.image_urls || [],
     date: data.date instanceof Timestamp ? data.date.toMillis() : data.date,
     dayKey: data.dayKey,
     mood: data.mood,
@@ -97,7 +97,7 @@ export const addEntry = async (entry: Omit<JournalEntry, 'id' | 'dayKey'>): Prom
  */
 export const updateEntry = async (entryId: string, entry: Partial<Omit<JournalEntry, 'id' | 'dayKey'>>): Promise<void> => {
   const docRef = doc(db, ENTRIES_COLLECTION, entryId)
-  
+
   // If date is being updated, regenerate dayKey
   const updateData: any = { ...entry }
   if (entry.date !== undefined) {
@@ -118,9 +118,9 @@ export const updateEntry = async (entryId: string, entry: Partial<Omit<JournalEn
  */
 export const getEntries = async (limitCount?: number): Promise<JournalEntry[]> => {
   const entriesRef = collection(db, ENTRIES_COLLECTION)
-  
+
   let q = query(entriesRef, orderBy('date', 'desc'))
-  
+
   if (limitCount) {
     q = query(q, limit(limitCount))
   }
@@ -156,21 +156,21 @@ export const uploadImage = async (file: File, userId?: string): Promise<string> 
   // Create a unique filename with timestamp to avoid collisions
   const timestamp = Date.now()
   const fileName = `${timestamp}-${file.name}`
-  
+
   // Build the path within the journal-images folder
   // Include userId in path if provided for better organization
-  const path = userId 
-    ? `${STORAGE_BUCKET}/${userId}/${fileName}` 
+  const path = userId
+    ? `${STORAGE_BUCKET}/${userId}/${fileName}`
     : `${STORAGE_BUCKET}/${fileName}`
-  
+
   const storageRef = ref(storage, path)
-  
+
   // Upload the file
   await uploadBytes(storageRef, file)
-  
+
   // Get the public download URL
   const downloadURL = await getDownloadURL(storageRef)
-  
+
   return downloadURL
 }
 

@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { Box, Typography, Button, Paper, Avatar, Divider, Switch, Slider, Grid, Chip, Alert, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Stack } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
 import { useThemeSettings, ACCENT_COLORS } from '../context/ThemeContext';
+import { useStickerContext } from '../context/StickerContext';
 import { LogOut, User, Download, Trash2, Moon, Sun, Type } from 'lucide-react';
 import { JournalService } from '../services/journal';
 
 export default function Settings() {
   const { user, logout } = useAuth();
   const { mode, setMode, accentColor, setAccentColor, fontSize, setFontSize } = useThemeSettings();
+  const { restoreStickers } = useStickerContext();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const handleExport = async () => {
@@ -128,6 +130,39 @@ export default function Settings() {
               </Box>
               <Button variant="outlined" onClick={handleExport} sx={{ borderRadius: 3 }}>
                 Export
+              </Button>
+            </Box>
+
+            <Divider sx={{ my: 3 }} />
+
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 24 }}>
+                  {/* Using a generic icon for restore */}
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                    <path d="M3 3v5h5" />
+                  </svg>
+                </Box>
+                <Box>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Restore Lost Stickers</Typography>
+                  <Typography variant="body2" color="text.secondary">Recover custom stickers from cloud storage</Typography>
+                </Box>
+              </Box>
+              <Button
+                variant="outlined"
+                onClick={async () => {
+                  try {
+                    await restoreStickers();
+                    alert("Stickers restored successfully!");
+                  } catch (e) {
+                    console.error(e);
+                    alert("Failed to restore stickers.");
+                  }
+                }}
+                sx={{ borderRadius: 3 }}
+              >
+                Restore
               </Button>
             </Box>
           </Paper>

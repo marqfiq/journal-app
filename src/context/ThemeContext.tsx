@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { createTheme, ThemeProvider as MUIThemeProvider, Theme } from '@mui/material/styles';
+import { ThemeProvider as MUIThemeProvider } from '@mui/material/styles';
 import { getTheme } from '../theme';
+import { useAuth } from './AuthContext';
+import { getUserSettings, updateUserSettings } from '../services/userService';
 
 type ThemeMode = 'light' | 'dark';
 type AccentColor = 'pink' | 'blue' | 'green' | 'purple' | 'orange';
@@ -26,6 +28,9 @@ export const ACCENT_COLORS: Record<AccentColor, { primary: string; secondary: st
 };
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
+    const { user } = useAuth();
+
+    // Initialize from localStorage (or default)
     const [mode, setMode] = useState<ThemeMode>(() => {
         return (localStorage.getItem('themeMode') as ThemeMode) || 'light';
     });
@@ -36,6 +41,26 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         return (localStorage.getItem('fontSize') as FontSize) || 'medium';
     });
 
+    // 1. Sync FROM Cloud on Login
+    useEffect(() => {
+        const fetchSettings = async () => {
+            if (user) {
+                try {
+                    const settings = await getUserSettings(user.uid);
+                    if (settings) {
+                        if (settings.themeMode) setMode(settings.themeMode);
+                        if (settings.accentColor) setAccentColor(settings.accentColor);
+                        if (settings.fontSize) setFontSize(settings.fontSize);
+                    }
+                } catch (error) {
+                    console.error("Failed to fetch user settings:", error);
+                }
+            }
+        };
+        fetchSettings();
+    }, [user]);
+
+    // 2. Sync TO Cloud (and localStorage) on Change
     useEffect(() => {
         localStorage.setItem('themeMode', mode);
         if (mode === 'dark') {
@@ -43,7 +68,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         } else {
             document.documentElement.classList.remove('dark');
         }
-    }, [mode]);
+
+        if (user) {
+            updateUserSettings(user.uid, { themeMode: mode }).catch(console.error);
+        }
+    }, [mode, user]);
 
     useEffect(() => {
         localStorage.setItem('accentColor', accentColor);
@@ -51,11 +80,18 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         const colors = ACCENT_COLORS[accentColor];
         document.documentElement.style.setProperty('--color-primary', colors.primary);
         document.documentElement.style.setProperty('--color-secondary', colors.secondary);
-    }, [accentColor]);
+
+        if (user) {
+            updateUserSettings(user.uid, { accentColor }).catch(console.error);
+        }
+    }, [accentColor, user]);
 
     useEffect(() => {
         localStorage.setItem('fontSize', fontSize);
-    }, [fontSize]);
+        if (user) {
+            updateUserSettings(user.uid, { fontSize }).catch(console.error);
+        }
+    }, [fontSize, user]);
 
     const theme = getTheme(mode, accentColor, fontSize);
 

@@ -122,5 +122,30 @@ export const StickerService = {
                 // Continue even if storage operations fail
             }
         }
+    },
+
+    async restoreStickersFromStorage(userId: string): Promise<string[]> {
+        const stickersRef = ref(storage, `stickers/${userId}`);
+        try {
+            const { listAll } = await import('firebase/storage');
+            const res = await listAll(stickersRef);
+
+            const urls = await Promise.all(
+                res.items.map((itemRef) => getDownloadURL(itemRef))
+            );
+
+            // Merge with system stickers
+            const systemUrls = SYSTEM_STICKERS.map(s => s.url);
+            const allStickers = [...new Set([...urls, ...systemUrls])]; // Deduplicate
+
+            // Update Firestore
+            const userDocRef = doc(db, COLLECTION_NAME, userId);
+            await setDoc(userDocRef, { stickers: allStickers }, { merge: true });
+
+            return allStickers;
+        } catch (error) {
+            console.error("Error restoring stickers:", error);
+            throw error;
+        }
     }
 };

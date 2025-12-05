@@ -7,6 +7,7 @@ import {
   signOut as firebaseSignOut
 } from 'firebase/auth';
 import { auth } from '../lib/firebase';
+import { initializeUser } from '../services/userService';
 
 interface AuthContextType {
   user: User | null;
@@ -33,7 +34,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      if (result.user) {
+        await initializeUser(result.user.uid);
+      }
     } catch (error) {
       console.error("Error signing in with Google", error);
       throw error;
