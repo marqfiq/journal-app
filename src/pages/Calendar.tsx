@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Grid, Divider } from '@mui/material';
+import { Box, Typography, Grid, Divider, useTheme, alpha } from '@mui/material';
 import CalendarView from '../components/CalendarView';
 import JournalSidebarItem from '../components/JournalSidebarItem';
 import { JournalService } from '../services/journal';
@@ -12,6 +12,7 @@ export default function Calendar() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const { user } = useAuth();
   const navigate = useNavigate();
+  const theme = useTheme();
 
   useEffect(() => {
     async function loadEntries() {
@@ -51,7 +52,16 @@ export default function Calendar() {
         </Grid>
 
         <Grid size={{ xs: 12, md: 4 }}>
-          <Box sx={{ p: 3, borderRadius: 4, height: '100%', display: 'flex', flexDirection: 'column', border: 1, borderColor: 'divider' }}>
+          <Box sx={{
+            p: 3,
+            borderRadius: 4,
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            border: 1,
+            borderColor: 'divider',
+            bgcolor: alpha(theme.palette.primary.main, 0.06)
+          }}>
             <Typography variant="h6" sx={{ mb: 2, fontFamily: 'Playfair Display', flexShrink: 0 }}>
               {selectedDate ? selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) : 'Select a date'}
             </Typography>
