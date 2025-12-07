@@ -1,5 +1,5 @@
 import { db, storage } from '../lib/firebase';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, getDocFromServer } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { SYSTEM_STICKERS } from '../constants/stickers';
 import { JournalService } from './journal';
@@ -9,13 +9,12 @@ const COLLECTION_NAME = 'users';
 export const StickerService = {
     async getUserStickers(userId: string): Promise<string[]> {
         const userDocRef = doc(db, COLLECTION_NAME, userId);
-        const userDoc = await getDoc(userDocRef);
+        console.log("getUserStickers: Fetching from SERVER for", userId);
+        const userDoc = await getDocFromServer(userDocRef);
 
         if (userDoc.exists() && userDoc.data().stickers) {
-            console.log("getUserStickers: Found stickers for", userId, "Count:", userDoc.data().stickers.length);
             return userDoc.data().stickers;
         } else {
-            console.log("getUserStickers: No stickers found for", userId, "returning defaults. Doc exists:", userDoc.exists());
             // Return system stickers if no data exists (Read-only fallback)
             return SYSTEM_STICKERS.map(s => s.url);
         }

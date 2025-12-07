@@ -225,7 +225,7 @@ export default function CompactActionBar({ currentMood, onMoodChange, onStickerS
                         </Box>
 
                         {stickersLoading ? (
-                            <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
                                 <CircularProgress size={24} />
                             </Box>
                         ) : (

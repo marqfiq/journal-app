@@ -3,6 +3,8 @@ import { useAuth } from './AuthContext';
 import { StickerService } from '../services/stickerService';
 import { SYSTEM_STICKERS } from '../constants/stickers';
 import { Sticker } from '../types';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 interface StickerContextType {
     stickers: Sticker[];
@@ -16,65 +18,60 @@ interface StickerContextType {
 const StickerContext = createContext<StickerContextType | undefined>(undefined);
 
 export function StickerProvider({ children }: { children: ReactNode }) {
-    const { user } = useAuth();
-    const [stickers, setStickers] = useState<Sticker[]>(SYSTEM_STICKERS);
+    const { user, loading: authLoading } = useAuth();
+    const [stickers, setStickers] = useState<Sticker[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // Load from cache immediately on mount or user change
+    // Load stickers via realtime listener
     useEffect(() => {
+        if (authLoading) return;
+
         if (!user) {
             setStickers(SYSTEM_STICKERS);
             setLoading(false);
             return;
         }
 
-        const cacheKey = `user_stickers_${user.uid}`;
-        const cached = localStorage.getItem(cacheKey);
+        setLoading(true);
+        const userDocRef = doc(db, 'users', user.uid);
 
-        if (cached) {
-            try {
-                const parsed = JSON.parse(cached);
-                setStickers(parsed);
-                setLoading(false); // Show cached immediately
-            } catch (e) {
-                console.error("Failed to parse sticker cache", e);
+        const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                if (data.stickers) {
+                    const urls = data.stickers as string[];
+                    const mappedStickers = urls.map(url => {
+                        const systemSticker = SYSTEM_STICKERS.find(s => s.url === url);
+                        if (systemSticker) return systemSticker;
+                        return {
+                            id: url,
+                            url: url,
+                            owner_id: user.uid
+                        };
+                    });
+                    setStickers(mappedStickers);
+                } else {
+                    // Doc exists but no stickers field -> Use defaults
+                    setStickers(SYSTEM_STICKERS);
+                }
+            } else {
+                // Doc doesn't exist -> Use defaults
+                setStickers(SYSTEM_STICKERS);
             }
-        }
-
-        // Fetch fresh data in background
-        loadStickers(user.uid, cacheKey);
-    }, [user]);
-
-    const loadStickers = async (userId: string, cacheKey: string) => {
-        try {
-            const urls = await StickerService.getUserStickers(userId);
-            const mappedStickers = urls.map(url => {
-                const systemSticker = SYSTEM_STICKERS.find(s => s.url === url);
-                if (systemSticker) return systemSticker;
-
-                return {
-                    id: url,
-                    url: url,
-                    owner_id: userId
-                };
-            });
-
-            setStickers(mappedStickers);
-            localStorage.setItem(cacheKey, JSON.stringify(mappedStickers));
-        } catch (error) {
-            console.error("Error loading stickers:", error);
-            // If cache existed, we keep showing it. If not, we might be in trouble but we have system stickers default.
-        } finally {
             setLoading(false);
-        }
-    };
+        }, (error) => {
+            console.error("Error listening to sticker updates:", error);
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [user, authLoading]);
 
     const addSticker = async (file: File) => {
         if (!user) return;
         try {
             await StickerService.uploadSticker(user.uid, file);
-            // Reload to update cache and UI
-            await loadStickers(user.uid, `user_stickers_${user.uid}`);
+            // No need to manually reload, onSnapshot will catch the update
         } catch (error) {
             console.error("Error adding sticker:", error);
             throw error;
@@ -86,8 +83,7 @@ export function StickerProvider({ children }: { children: ReactNode }) {
         try {
             const url = typeof stickerOrUrl === 'string' ? stickerOrUrl : stickerOrUrl.url;
             await StickerService.deleteSticker(user.uid, url);
-            // Reload to update cache and UI
-            await loadStickers(user.uid, `user_stickers_${user.uid}`);
+            // No need to manually reload, onSnapshot will catch the update
         } catch (error) {
             console.error("Error removing sticker:", error);
             throw error;
@@ -103,7 +99,7 @@ export function StickerProvider({ children }: { children: ReactNode }) {
             restoreStickers: async () => {
                 if (!user) return;
                 await StickerService.restoreStickersFromStorage(user.uid);
-                await loadStickers(user.uid, `user_stickers_${user.uid}`);
+                // No need to manually reload
             },
             canManage: !!user
         }}>
