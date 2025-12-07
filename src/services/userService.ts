@@ -15,6 +15,7 @@ const USERS_COLLECTION = 'users';
  */
 export const getUserSettings = async (userId: string): Promise<UserSettings | null> => {
     const docRef = doc(db, USERS_COLLECTION, userId);
+    console.log("initializeUser called for", userId);
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists() && docSnap.data().settings) {
@@ -43,6 +44,7 @@ export const updateUserSettings = async (userId: string, settings: UserSettings)
  */
 export const initializeUser = async (userId: string): Promise<void> => {
     const docRef = doc(db, USERS_COLLECTION, userId);
+    console.log("initializeUser called for", userId);
     const docSnap = await getDoc(docRef);
 
     if (!docSnap.exists()) {
@@ -59,12 +61,7 @@ export const initializeUser = async (userId: string): Promise<void> => {
     } else {
         // Existing user: Check if stickers field exists
         const data = docSnap.data();
-        if (!data.stickers) {
-            // Legacy user without stickers: Add defaults
-            const defaultStickers = SYSTEM_STICKERS.map(s => s.url);
-            await setDoc(docRef, {
-                stickers: defaultStickers
-            }, { merge: true });
-        }
+        console.log("initializeUser: Existing user found", userId, "Stickers:", data.stickers ? "Found" : "Missing");
+        // We no longer force-write defaults here, as getUserStickers handles the fallback safely.
     }
 };

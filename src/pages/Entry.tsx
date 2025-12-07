@@ -173,6 +173,9 @@ export default function Entry() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Capture input to reset later
+    const input = event.target;
+
     setUploadingSticker(true);
     try {
       await addSticker(file);
@@ -180,6 +183,8 @@ export default function Entry() {
       console.error("Failed to upload sticker", error);
     } finally {
       setUploadingSticker(false);
+      // Reset input to allow selecting the same file again
+      input.value = '';
     }
   };
 
@@ -346,7 +351,7 @@ export default function Entry() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <Paper elevation={0} sx={{ borderRadius: 4, mb: 3, border: 1, borderColor: 'divider', overflow: 'hidden' }}>
+          <Paper elevation={0} sx={{ borderRadius: 4, mb: 3, border: 1, borderColor: 'divider' }}>
 
             {/* Header Section */}
             <Box sx={{ p: 4, pb: 2 }}>
@@ -455,6 +460,7 @@ export default function Entry() {
         onClose={handleMoodClose}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         transformOrigin={{ vertical: 'top', horizontal: 'center' }}
+        PaperProps={{ sx: { borderRadius: 2, boxShadow: 4 } }}
       >
         <Box sx={{ p: 2 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
@@ -492,6 +498,7 @@ export default function Entry() {
         onClose={handleStickerClose}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         transformOrigin={{ vertical: 'top', horizontal: 'center' }}
+        PaperProps={{ sx: { borderRadius: 2, boxShadow: 4 } }}
         keepMounted
       >
         <Box sx={{ p: 2, width: 500, maxHeight: 500, overflowY: 'auto' }}>

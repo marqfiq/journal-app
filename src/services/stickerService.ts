@@ -12,12 +12,12 @@ export const StickerService = {
         const userDoc = await getDoc(userDocRef);
 
         if (userDoc.exists() && userDoc.data().stickers) {
+            console.log("getUserStickers: Found stickers for", userId, "Count:", userDoc.data().stickers.length);
             return userDoc.data().stickers;
         } else {
-            // Initialize with system stickers if no data exists
-            const defaultStickers = SYSTEM_STICKERS.map(s => s.url);
-            await setDoc(userDocRef, { stickers: defaultStickers }, { merge: true });
-            return defaultStickers;
+            console.log("getUserStickers: No stickers found for", userId, "returning defaults. Doc exists:", userDoc.exists());
+            // Return system stickers if no data exists (Read-only fallback)
+            return SYSTEM_STICKERS.map(s => s.url);
         }
     },
 

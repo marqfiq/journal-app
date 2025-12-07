@@ -60,6 +60,9 @@ export default function CompactActionBar({ currentMood, onMoodChange, onStickerS
         const file = event.target.files?.[0];
         if (!file) return;
 
+        // Capture input to reset later
+        const input = event.target;
+
         setUploadingSticker(true);
         try {
             await addSticker(file);
@@ -67,6 +70,8 @@ export default function CompactActionBar({ currentMood, onMoodChange, onStickerS
             console.error("Failed to upload sticker", error);
         } finally {
             setUploadingSticker(false);
+            // Reset input to allow selecting the same file again
+            input.value = '';
         }
     };
 
@@ -144,6 +149,7 @@ export default function CompactActionBar({ currentMood, onMoodChange, onStickerS
                         vertical: 'bottom',
                         horizontal: 'center',
                     }}
+                    PaperProps={{ sx: { borderRadius: 2, boxShadow: 4 } }}
                 >
                     <Box sx={{ p: 2 }}>
                         <Typography variant="subtitle2" sx={{ mb: 1, textAlign: 'center' }}>How are you?</Typography>
@@ -175,6 +181,7 @@ export default function CompactActionBar({ currentMood, onMoodChange, onStickerS
                         vertical: 'bottom',
                         horizontal: 'center',
                     }}
+                    PaperProps={{ sx: { borderRadius: 2, boxShadow: 4 } }}
                     slotProps={{
                         root: {
                             slotProps: {
