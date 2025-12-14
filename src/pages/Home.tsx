@@ -13,6 +13,7 @@ export default function Home() {
   const theme = useTheme();
   const navigate = useNavigate();
   const [recentEntries, setRecentEntries] = useState<JournalEntry[]>([]);
+  const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
     async function loadRecent() {
@@ -33,6 +34,8 @@ export default function Home() {
     if (hour < 18) return 'Good afternoon';
     return 'Good evening';
   };
+
+
 
   return (
     <Box sx={{
@@ -67,8 +70,16 @@ export default function Home() {
               justifyContent: 'center',
               minHeight: 200,
               position: 'relative',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                // Removed CSS animations
+              }
             }}
+            onClick={() => navigate('/journal/new')}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
           >
             <Box sx={{ position: 'relative', zIndex: 1 }}>
               <Typography variant="h5" sx={{ fontFamily: 'Playfair Display', mb: 2 }}>
@@ -84,21 +95,67 @@ export default function Home() {
                   px: 3
                 }}
                 startIcon={<Plus />}
-                onClick={() => navigate('/journal/new')}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate('/journal/new');
+                }}
               >
                 Start Writing
               </Button>
             </Box>
+
+            {/* Glow circle */}
+            <Box
+              component={motion.div}
+              animate={{
+                scale: isHovered ? [1, 1.43, 1] : 1,
+                opacity: isHovered ? [0.2, 0.4, 0.2] : 0.2
+              }}
+              transition={{
+                duration: isHovered ? 5 : 0.5,
+                times: isHovered ? [0, 0.6, 1] : undefined,
+                repeat: isHovered ? Infinity : 0,
+                ease: isHovered ? "easeInOut" : "easeOut"
+              }}
+              sx={{
+                position: 'absolute',
+                right: -20,
+                bottom: -20,
+                width: 150,
+                height: 150,
+                borderRadius: '50%',
+                bgcolor: 'white',
+                opacity: 0.2,
+                filter: 'blur(20px)',
+                transformOrigin: 'center',
+                pointerEvents: 'none'
+              }}
+            />
+
             {/* Decorative circle */}
-            <Box sx={{
-              position: 'absolute',
-              right: -20,
-              bottom: -20,
-              width: 150,
-              height: 150,
-              borderRadius: '50%',
-              bgcolor: 'rgba(255,255,255,0.1)'
-            }} />
+            <Box
+              component={motion.div}
+              animate={{
+                scale: isHovered ? [1, 1.21, 1] : 1
+              }}
+              transition={{
+                duration: isHovered ? 5 : 0.5,
+                times: isHovered ? [0, 0.6, 1] : undefined,
+                repeat: isHovered ? Infinity : 0,
+                ease: isHovered ? "easeInOut" : "easeOut"
+              }}
+              sx={{
+                position: 'absolute',
+                right: -20,
+                bottom: -20,
+                width: 150,
+                height: 150,
+                borderRadius: '50%',
+                bgcolor: 'rgba(255,255,255,0.1)',
+                transformOrigin: 'center',
+                pointerEvents: 'none'
+              }}
+            />
           </Paper>
         </Grid>
 
