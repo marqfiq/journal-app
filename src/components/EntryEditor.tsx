@@ -112,6 +112,12 @@ export default function EntryEditor({ initialContent = '', onUpdate, editable = 
         },
     });
 
+    React.useEffect(() => {
+        if (editor) {
+            editor.setEditable(editable);
+        }
+    }, [editor, editable]);
+
     return (
         <Box sx={{ width: '100%' }}>
             {editable && <MenuBar editor={editor} />}

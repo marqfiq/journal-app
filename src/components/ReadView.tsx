@@ -42,7 +42,7 @@ export default function ReadView({ entry, onEdit }: ReadViewProps) {
                         <Box>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                                 <Typography variant="h4" sx={{ fontFamily: 'Playfair Display', mb: 0.5, fontWeight: 700, lineHeight: 1.2 }}>
-                                    {new Date(entry.date || Date.now()).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                                    {new Date(entry.date || Date.now()).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
                                 </Typography>
 
                                 {/* Mood (Next to Date, Vertically Aligned) */}

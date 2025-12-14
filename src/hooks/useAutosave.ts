@@ -14,9 +14,12 @@ export function useAutosave<T>({ data, onSave, interval = 2000, saveOnUnmount = 
     const [status, setStatus] = useState<AutosaveStatus>('idle');
     const [lastSaved, setLastSaved] = useState<Date | null>(null);
     const [retryTrigger, setRetryTrigger] = useState(0);
+
     const dataRef = useRef(data);
     const previousDataRef = useRef(data);
     const isOnline = useRef(navigator.onLine);
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const pendingSave = useRef(false);
 
     // Keep refs up to date
     useEffect(() => {
@@ -56,7 +59,30 @@ export function useAutosave<T>({ data, onSave, interval = 2000, saveOnUnmount = 
         }
     }, [data, key]);
 
-    // Debounced Cloud Save
+    // Core Save Logic
+    const performSave = useCallback(async (dataToSave: T) => {
+        if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+            timeoutRef.current = null;
+        }
+
+        pendingSave.current = false;
+        setStatus('saving');
+
+        try {
+            await onSave(dataToSave);
+            setStatus('saved');
+            setLastSaved(new Date());
+            previousDataRef.current = dataToSave;
+        } catch (error) {
+            console.error('Autosave failed', error);
+            setStatus('error');
+            // If failed, we might want to keep pendingSave true? 
+            // But for now let's assume error state handles it.
+        }
+    }, [onSave]);
+
+    // Debounced Cloud Save Effect
     useEffect(() => {
         // Skip if data hasn't changed, unless forced by retry
         if (retryTrigger === 0 && JSON.stringify(data) === JSON.stringify(previousDataRef.current)) {
@@ -70,26 +96,30 @@ export function useAutosave<T>({ data, onSave, interval = 2000, saveOnUnmount = 
 
         // Immediate feedback: Unsaved changes
         setStatus('unsaved');
+        pendingSave.current = true;
 
-        const handler = setTimeout(async () => {
-            setStatus('saving');
-            try {
-                await onSave(data);
-                setStatus('saved');
-                setLastSaved(new Date());
-                previousDataRef.current = data;
-            } catch (error) {
-                console.error('Autosave failed', error);
-                setStatus('error');
-            }
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
+        timeoutRef.current = setTimeout(() => {
+            performSave(data);
         }, interval);
 
         return () => {
-            clearTimeout(handler);
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
+            // Save on unmount if pending
+            if (saveOnUnmount && pendingSave.current) {
+                // Fire and forget - cannot await in cleanup
+                onSave(dataRef.current).catch(e => console.error("Save on unmount failed", e));
+            }
         };
-    }, [data, interval, onSave, retryTrigger]);
+    }, [data, interval, performSave, retryTrigger, saveOnUnmount, onSave]);
 
     const retry = () => setRetryTrigger(prev => prev + 1);
 
-    return { status, lastSaved, retry };
+    const saveNow = useCallback(async () => {
+        await performSave(dataRef.current);
+    }, [performSave]);
+
+    return { status, lastSaved, retry, saveNow };
 }
