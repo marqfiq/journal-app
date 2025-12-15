@@ -71,19 +71,19 @@ export const getTheme = (mode: ThemeMode, accentColor: AccentColor, fontSize: Fo
       fontSize: 14 * fontSizeMultiplier,
       h1: {
         fontFamily: 'var(--font-serif)',
-        fontWeight: 'var(--font-weight-header, 700)' as React.CSSProperties['fontWeight'],
+        fontWeight: 200,
       },
       h2: {
         fontFamily: 'var(--font-serif)',
-        fontWeight: 'var(--font-weight-header, 700)' as React.CSSProperties['fontWeight'],
+        fontWeight: 200,
       },
       h3: {
         fontFamily: 'var(--font-serif)',
-        fontWeight: 'var(--font-weight-header, 700)' as React.CSSProperties['fontWeight'],
+        fontWeight: 200,
       },
       h4: {
         fontFamily: 'var(--font-serif)',
-        fontWeight: 'var(--font-weight-header, 700)' as React.CSSProperties['fontWeight'],
+        fontWeight: 200,
       },
       button: {
         textTransform: 'none',

@@ -77,7 +77,12 @@ export default function Home() {
                 // Removed CSS animations
               }
             }}
-            onClick={() => navigate('/journal/new')}
+            onClick={() => navigate('/journal/new', {
+              state: {
+                from: '/',
+                label: 'Home'
+              }
+            })}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
           >
@@ -97,7 +102,12 @@ export default function Home() {
                 startIcon={<Plus />}
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate('/journal/new');
+                  navigate('/journal/new', {
+                    state: {
+                      from: '/',
+                      label: 'Home'
+                    }
+                  });
                 }}
               >
                 Start Writing
@@ -210,7 +220,12 @@ export default function Home() {
                     transition: 'box-shadow 0.2s',
                     '&:hover': { boxShadow: '0px 8px 24px rgba(0,0,0,0.06)' }
                   }}
-                  onClick={() => navigate(`/journal/${entry.id}`)}
+                  onClick={() => navigate(`/journal/${entry.id}`, {
+                    state: {
+                      from: '/',
+                      label: 'Home'
+                    }
+                  })}
                 >
                   <CardContent sx={{ p: 3 }}>
                     <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>

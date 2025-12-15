@@ -46,3 +46,20 @@ export interface Sticker {
   owner_id: string; // 'system' or userId
 }
 
+export interface BackLocationState {
+  from: string; // '/journal', '/calendar', '/search', '/'
+  label: string; // 'Journal', 'Calendar', 'Search', 'Home'
+  context?: {
+    // Journal context
+    selectedEntryId?: string;
+
+    // Calendar context
+    date?: number; // timestamp
+    view?: 'month' | 'year';
+
+    // Search context
+    query?: string;
+    scrollPosition?: number;
+  };
+}
+
