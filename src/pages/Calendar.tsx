@@ -44,8 +44,8 @@ export default function Calendar() {
 
 
       <Grid container spacing={4} sx={{ height: '100%' }}>
-        <Grid size={{ xs: 12, md: 8 }} sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-          <Typography variant="h4" component="h1" sx={{ mb: 4, fontFamily: 'Playfair Display', fontWeight: 700 }}>
+        <Grid size={{ xs: 12, md: 8 }} sx={{ display: 'flex', flexDirection: 'column' }}>
+          <Typography variant="h4" component="h1" sx={{ mb: 4, fontWeight: 700 }}>
             Calendar
           </Typography>
           <CalendarView entries={entries} onDateSelect={setSelectedDate} />
@@ -62,7 +62,7 @@ export default function Calendar() {
             borderColor: 'divider',
             bgcolor: alpha(theme.palette.primary.main, 0.06)
           }}>
-            <Typography variant="h6" sx={{ mb: 2, fontFamily: 'Playfair Display', flexShrink: 0 }}>
+            <Typography variant="h6" sx={{ mb: 2, flexShrink: 0 }}>
               {selectedDate ? selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) : 'Select a date'}
             </Typography>
 

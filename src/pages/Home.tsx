@@ -47,11 +47,11 @@ export default function Home() {
       }
     }}>
       <Box sx={{ mb: 6 }}>
-        <Typography variant="h3" component="h1" sx={{ fontFamily: 'Playfair Display', fontWeight: 700, mb: 1 }}>
+        <Typography variant="h3" component="h1" sx={{ mb: 1 }}>
           {getGreeting()}, {user?.displayName?.split(' ')[0] || 'Helen'}
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          Ready to capture your thoughts today?
+          Unwind your mind.
         </Typography>
       </Box>
 
@@ -82,7 +82,7 @@ export default function Home() {
             onMouseLeave={() => setIsHovered(false)}
           >
             <Box sx={{ position: 'relative', zIndex: 1 }}>
-              <Typography variant="h5" sx={{ fontFamily: 'Playfair Display', mb: 2 }}>
+              <Typography variant="h5" sx={{ mb: 2 }}>
                 Write a new entry
               </Typography>
               <Button
@@ -189,7 +189,7 @@ export default function Home() {
         </Grid>
       </Grid>
 
-      <Typography variant="h5" sx={{ mb: 3, fontFamily: 'Playfair Display' }}>
+      <Typography variant="h5" sx={{ mb: 3 }}>
         Recent Memories
       </Typography>
 

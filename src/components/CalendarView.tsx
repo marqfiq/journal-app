@@ -99,7 +99,7 @@ export default function CalendarView({ entries, onDateSelect }: CalendarViewProp
                         '&:hover': { bgcolor: 'action.hover' }
                     }}
                 >
-                    <Typography variant="h5" sx={{ fontFamily: 'Playfair Display', fontWeight: 600 }}>
+                    <Typography variant="h5" sx={{ fontWeight: 600 }}>
                         {monthLabel}
                     </Typography>
                 </Button>
@@ -163,7 +163,7 @@ export default function CalendarView({ entries, onDateSelect }: CalendarViewProp
                 </IconButton>
             </Box>
 
-            <Grid container spacing={1} sx={{ maxWidth: 600, mx: 'auto' }}>
+            <Grid container spacing={0.5} sx={{ maxWidth: 'min(600px, calc((100vh - 450px) * 7 / 6))', mx: 'auto' }}>
                 {DAYS.map(day => (
                     <Grid size={12 / 7} key={day} sx={{ textAlign: 'center', mb: 2 }}>
                         <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
