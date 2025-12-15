@@ -1,18 +1,25 @@
 import { createTheme, alpha } from '@mui/material/styles';
-import { ACCENT_COLORS } from './context/ThemeContext';
 
-type ThemeMode = 'light' | 'dark';
-type AccentColor = 'pink' | 'blue' | 'green' | 'purple' | 'orange';
-type FontSize = 'small' | 'medium' | 'large';
+export type ThemeMode = 'light' | 'dark';
+export type AccentColor = 'pink' | 'blue' | 'green' | 'purple' | 'orange';
+export type FontSize = 'small' | 'medium' | 'large';
+
+export const ACCENT_COLORS: Record<AccentColor, { primary: string; secondary: string }> = {
+  pink: { primary: '#E0B0B6', secondary: '#D4C4B7' },
+  blue: { primary: '#A7C7E7', secondary: '#C4D4E0' },
+  green: { primary: '#A8D5BA', secondary: '#C8D9C3' },
+  purple: { primary: '#C3B1E1', secondary: '#DCD3E8' },
+  orange: { primary: '#FFDAC1', secondary: '#E8D3C4' },
+};
 
 export const getTheme = (mode: ThemeMode, accentColor: AccentColor, fontSize: FontSize) => {
-  const colors = ACCENT_COLORS[accentColor];
+  const colors = ACCENT_COLORS[accentColor] || ACCENT_COLORS.pink;
 
   const fontSizeMultiplier = {
     small: 0.875,
     medium: 1,
     large: 1.125,
-  }[fontSize];
+  }[fontSize] || 1;
 
   return createTheme({
     palette: {
@@ -40,20 +47,20 @@ export const getTheme = (mode: ThemeMode, accentColor: AccentColor, fontSize: Fo
       fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
       fontSize: 14 * fontSizeMultiplier,
       h1: {
-        fontFamily: '"Playfair Display", serif',
-        fontWeight: 700,
+        fontFamily: 'var(--font-serif)',
+        fontWeight: 700
       },
       h2: {
-        fontFamily: '"Playfair Display", serif',
-        fontWeight: 600,
+        fontFamily: 'var(--font-serif)',
+        fontWeight: 700,
       },
       h3: {
-        fontFamily: '"Playfair Display", serif',
-        fontWeight: 600,
+        fontFamily: 'var(--font-serif)',
+        fontWeight: 700,
       },
       h4: {
-        fontFamily: '"Playfair Display", serif',
-        fontWeight: 500,
+        fontFamily: 'var(--font-serif)',
+        fontWeight: 700,
       },
       button: {
         textTransform: 'none',

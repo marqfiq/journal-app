@@ -234,7 +234,7 @@ export default function Layout() {
                     <IconButton onClick={handleDrawerToggle} edge="start" sx={{ color: 'text.primary' }}>
                         <MenuIcon />
                     </IconButton>
-                    <Typography variant="h6" sx={{ ml: 2, fontFamily: 'Playfair Display', fontWeight: 700 }}>
+                    <Typography variant="h6" sx={{ ml: 2, fontWeight: 700 }}>
                         Helen's Journal
                     </Typography>
                 </Box>

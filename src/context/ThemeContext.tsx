@@ -1,12 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ThemeProvider as MUIThemeProvider } from '@mui/material/styles';
-import { getTheme } from '../theme';
+import { getTheme, ACCENT_COLORS, ThemeMode, AccentColor, FontSize } from '../theme';
 import { useAuth } from './AuthContext';
 import { getUserSettings, updateUserSettings } from '../services/userService';
-
-type ThemeMode = 'light' | 'dark';
-type AccentColor = 'pink' | 'blue' | 'green' | 'purple' | 'orange';
-type FontSize = 'small' | 'medium' | 'large';
 
 interface ThemeContextType {
     mode: ThemeMode;
@@ -19,26 +15,30 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export const ACCENT_COLORS: Record<AccentColor, { primary: string; secondary: string }> = {
-    pink: { primary: '#E0B0B6', secondary: '#D4C4B7' },
-    blue: { primary: '#A7C7E7', secondary: '#C4D4E0' },
-    green: { primary: '#A8D5BA', secondary: '#C8D9C3' },
-    purple: { primary: '#C3B1E1', secondary: '#DCD3E8' },
-    orange: { primary: '#FFDAC1', secondary: '#E8D3C4' },
-};
-
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const { user } = useAuth();
 
     // Initialize from localStorage (or default)
     const [mode, setMode] = useState<ThemeMode>(() => {
-        return (localStorage.getItem('themeMode') as ThemeMode) || 'light';
+        const stored = localStorage.getItem('themeMode');
+        if (stored && ['light', 'dark'].includes(stored)) {
+            return stored as ThemeMode;
+        }
+        return 'light';
     });
     const [accentColor, setAccentColor] = useState<AccentColor>(() => {
-        return (localStorage.getItem('accentColor') as AccentColor) || 'pink';
+        const stored = localStorage.getItem('accentColor');
+        if (stored && Object.keys(ACCENT_COLORS).includes(stored)) {
+            return stored as AccentColor;
+        }
+        return 'pink';
     });
     const [fontSize, setFontSize] = useState<FontSize>(() => {
-        return (localStorage.getItem('fontSize') as FontSize) || 'medium';
+        const stored = localStorage.getItem('fontSize');
+        if (stored && ['small', 'medium', 'large'].includes(stored)) {
+            return stored as FontSize;
+        }
+        return 'medium';
     });
 
     // 1. Sync FROM Cloud on Login

@@ -40,7 +40,7 @@ export default function DeleteDialog({
                 }}>
                     <AlertTriangle size={20} color="#ef4444" />
                 </Box>
-                <Typography variant="h6" sx={{ fontFamily: 'Playfair Display', fontWeight: 700 }}>
+                <Typography variant="h6" sx={{ fontWeight: 700 }}>
                     {title}
                 </Typography>
             </DialogTitle>

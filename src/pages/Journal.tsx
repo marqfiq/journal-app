@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Box, Typography, Button, Paper, IconButton, useMediaQuery, useTheme, Divider, Chip } from '@mui/material';
-import { Plus, Edit2, Trash2, Calendar, MapPin, X, Eye } from 'lucide-react';
+import { Box, Typography, Button, Paper, IconButton, useMediaQuery, useTheme, Divider, Chip, CircularProgress } from '@mui/material';
+import { Plus, Edit2, Trash2, X, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { JournalEntry } from '../types';
 import { JournalService } from '../services/journal';
@@ -11,7 +11,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useStickers } from '../hooks/useStickers';
 import { SYSTEM_STICKERS } from '../constants/stickers';
 import ImageLightbox from '../components/ImageLightbox';
-import ScrapbookGallery from '../components/ScrapbookGallery';
+import EntryHeader from '../components/EntryHeader';
+import EntryAttachments from '../components/EntryAttachments';
+import { StorageService } from '../services/storage';
+import { MAX_IMAGES_PER_ENTRY } from '../constants/config';
 
 export default function Journal() {
     const [entries, setEntries] = useState<JournalEntry[]>([]);
@@ -24,7 +27,7 @@ export default function Journal() {
     const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
 
     // Sticker Hook
-    const { stickers } = useStickers();
+    const { stickers, addSticker, removeSticker, canManage } = useStickers();
 
     // Lightbox State
     const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -35,6 +38,19 @@ export default function Journal() {
     const sidebarRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const isResizing = useRef(false);
+
+    // Image Upload State
+    const imageInputRef = useRef<HTMLInputElement>(null);
+    const [uploading, setUploading] = useState(false);
+
+    const [isReordering, setIsReordering] = useState(false);
+
+    // --- LIFTED STATE FOR ENTRY HEADER ---
+    const [moodAnchor, setMoodAnchor] = useState<null | HTMLElement>(null);
+    const [stickerAnchor, setStickerAnchor] = useState<null | HTMLElement>(null);
+    const [dateOpen, setDateOpen] = useState(false);
+    const [timeOpen, setTimeOpen] = useState(false);
+
 
     useEffect(() => {
         async function loadEntries() {
@@ -49,11 +65,7 @@ export default function Journal() {
     }, [user, isMobile]);
 
     const selectedEntry = entries.find(e => e.id === selectedEntryId);
-    // Fallback to SYSTEM_STICKERS is handled by useStickers hook logic if needed, 
-    // but here we just want to find it in the available stickers.
-    // If it's a legacy system sticker ID that isn't in the user's list for some reason, 
-    // we might want to fallback to SYSTEM_STICKERS import, but useStickers should cover it.
-    // Actually, let's keep SYSTEM_STICKERS import as a fallback just in case.
+
     const selectedSticker = selectedEntry ? (
         stickers.find(s => s.id === selectedEntry.sticker_id) ||
         SYSTEM_STICKERS.find(s => s.id === selectedEntry.sticker_id) ||
@@ -75,6 +87,81 @@ export default function Journal() {
         }
         setDeleteDialogOpen(false);
         setEntryToDelete(null);
+    };
+
+    const handleUpdateEntry = async (updates: Partial<JournalEntry>) => {
+        if (!selectedEntryId) return;
+
+        setEntries(prevEntries => prevEntries.map(e =>
+            e.id === selectedEntryId ? { ...e, ...updates } : e
+        ));
+
+        try {
+            await JournalService.updateEntry(selectedEntryId, updates);
+        } catch (error) {
+            console.error("Failed to update entry", error);
+        }
+    };
+
+    const handleDeleteImage = async (index: number) => {
+        if (!selectedEntryId || !selectedEntry?.image_urls) return;
+        const urlToDelete = selectedEntry.image_urls[index];
+        const newImageUrls = selectedEntry.image_urls.filter((_, i) => i !== index);
+
+        // Optimistic update
+        setEntries(prevEntries => prevEntries.map(e =>
+            e.id === selectedEntryId ? { ...e, image_urls: newImageUrls } : e
+        ));
+
+        if (newImageUrls.length === 0) {
+            setLightboxOpen(false);
+        } else if (index >= newImageUrls.length) {
+            setLightboxIndex(newImageUrls.length - 1);
+        }
+
+        try {
+            await StorageService.deleteImage(urlToDelete);
+            await JournalService.updateEntry(selectedEntryId, { image_urls: newImageUrls });
+        } catch (error) {
+            console.error("Failed to delete image", error);
+            // Revert logic could go here
+        }
+    };
+
+    const handleImageClick = () => {
+        imageInputRef.current?.click();
+    };
+
+    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (!event.target.files || !event.target.files.length || !user || !selectedEntry) return;
+        const currentImageCount = selectedEntry.image_urls?.length || 0;
+        const newFiles = Array.from(event.target.files);
+
+        if (currentImageCount + newFiles.length > MAX_IMAGES_PER_ENTRY) {
+            alert(`You can only add up to ${MAX_IMAGES_PER_ENTRY} images per entry.`);
+            return;
+        }
+
+        setUploading(true);
+        const urls: string[] = [];
+
+        try {
+            for (const file of newFiles) {
+                if (!file.type.startsWith('image/')) continue;
+                const url = await StorageService.uploadImage(file, user.uid);
+                urls.push(url);
+            }
+
+            if (urls.length > 0) {
+                const newImageUrls = [...(selectedEntry.image_urls || []), ...urls];
+                handleUpdateEntry({ image_urls: newImageUrls });
+            }
+        } catch (error) {
+            console.error("Upload failed", error);
+        } finally {
+            setUploading(false);
+            event.target.value = ''; // Reset input
+        }
     };
 
     // Resizing Logic
@@ -102,7 +189,6 @@ export default function Journal() {
             const containerLeft = containerRef.current.getBoundingClientRect().left;
             const relativeX = clientX - containerLeft;
 
-            // Constrain width between 250px and 600px
             const newWidth = Math.max(250, Math.min(relativeX, 600));
             setSidebarWidth(newWidth);
         }
@@ -124,7 +210,7 @@ export default function Journal() {
     return (
         <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 3 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Typography variant="h4" component="h1" sx={{ fontFamily: 'Playfair Display', fontWeight: 700 }}>
+                <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
                     My Journal
                 </Typography>
                 <Button
@@ -144,8 +230,8 @@ export default function Journal() {
                     overflow: 'hidden',
                     display: 'flex',
                     flexDirection: isMobile ? 'column' : 'row',
-                    gap: isMobile ? 0 : 0, // Gap handled by resizer
-                    mx: -2, // Expand container to allow padding
+                    gap: isMobile ? 0 : 0,
+                    mx: -2,
                     my: -2,
                     p: 2
                 }}
@@ -158,10 +244,10 @@ export default function Journal() {
                         height: '100%',
                         overflowY: 'auto',
                         pr: isMobile ? 0 : 2,
-                        pl: 2, // Add left padding for hover effect
-                        ml: -2, // Pull back to align
-                        pt: 2, // Add top padding
-                        mt: -2, // Pull back to align
+                        pl: 2,
+                        ml: -2,
+                        pt: 2,
+                        mt: -2,
                         display: (isMobile && selectedEntryId) ? 'none' : 'block',
                         flexShrink: 0,
                         '&::-webkit-scrollbar-track': { my: 2 }
@@ -182,7 +268,6 @@ export default function Journal() {
                     )}
                 </Box>
 
-                {/* Resizer Handle (Desktop Only) */}
                 {!isMobile && (
                     <Box
                         onMouseDown={startResizing}
@@ -215,7 +300,7 @@ export default function Journal() {
                     flex: 1,
                     height: '100%',
                     display: (isMobile && !selectedEntryId) ? 'none' : 'block',
-                    minWidth: 0 // Prevent flex overflow
+                    minWidth: 0
                 }}>
                     <AnimatePresence mode="wait">
                         {selectedEntry ? (
@@ -238,7 +323,9 @@ export default function Journal() {
                                         position: 'relative',
                                         border: 1,
                                         borderColor: 'divider',
-                                        '&::-webkit-scrollbar-track': { my: 2 }
+                                        '&::-webkit-scrollbar-track': { my: 2 },
+                                        display: 'flex',
+                                        flexDirection: 'column'
                                     }}
                                 >
                                     {isMobile && (
@@ -250,107 +337,89 @@ export default function Journal() {
                                         </IconButton>
                                     )}
 
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1, mt: isMobile ? 4 : 0 }}>
-                                        <Box>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                                <Typography variant="h4" sx={{ fontFamily: 'Playfair Display', mb: 0.5, fontWeight: 700, lineHeight: 1.2 }}>
-                                                    {new Date(selectedEntry.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-                                                </Typography>
+                                    {/* --- HEADER --- */}
+                                    <EntryHeader
+                                        entry={selectedEntry}
+                                        onUpdate={handleUpdateEntry}
+                                        onImageClick={handleImageClick}
+                                        stickers={stickers}
+                                        canManageStickers={canManage}
+                                        onAddSticker={addSticker}
+                                        onRemoveSticker={removeSticker}
+                                        isReordering={isReordering}
+                                        onReorderToggle={() => setIsReordering(!isReordering)}
 
-                                                {/* Mood (Next to Date, Vertically Aligned) */}
-                                                {(selectedEntry.mood || 0) > 0 && (
-                                                    <Box sx={{ fontSize: '1.8rem', lineHeight: 1, display: 'flex', alignItems: 'center' }}>
-                                                        {['😢', '😕', '😐', '🙂', '😄'][(selectedEntry.mood!) - 1]}
-                                                    </Box>
-                                                )}
+                                        // Controlled Props
+                                        moodAnchor={moodAnchor}
+                                        onMoodClick={(e) => setMoodAnchor(e.currentTarget)}
+                                        onMoodClose={() => setMoodAnchor(null)}
+                                        stickerAnchor={stickerAnchor}
+                                        onStickerClick={(e) => setStickerAnchor(e.currentTarget)}
+                                        onStickerClose={() => setStickerAnchor(null)}
+                                        dateOpen={dateOpen}
+                                        onDateOpen={() => setDateOpen(true)}
+                                        onDateClose={() => setDateOpen(false)}
+                                        timeOpen={timeOpen}
+                                        onTimeOpen={() => setTimeOpen(true)}
+                                        onTimeClose={() => setTimeOpen(false)}
+
+                                        customActions={
+                                            <Box sx={{ display: 'flex', gap: 1 }}>
+                                                <IconButton
+                                                    onClick={() => navigate(`/journal/${selectedEntry.id}`)}
+                                                    color="primary"
+                                                    title="View Full Page"
+                                                    size="small"
+                                                >
+                                                    <Eye size={20} />
+                                                </IconButton>
+                                                <IconButton
+                                                    onClick={() => navigate(`/journal/${selectedEntry.id}`, { state: { isEditing: true } })}
+                                                    color="primary"
+                                                    title="Edit Text"
+                                                    size="small"
+                                                >
+                                                    <Edit2 size={20} />
+                                                </IconButton>
+                                                <IconButton
+                                                    onClick={() => handleDeleteClick(selectedEntry.id)}
+                                                    color="error"
+                                                    title="Delete Entry"
+                                                    size="small"
+                                                >
+                                                    <Trash2 size={20} />
+                                                </IconButton>
                                             </Box>
+                                        }
+                                    />
 
-                                            <Box sx={{ display: 'flex', gap: 2, color: 'text.secondary' }}>
-                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                    <Calendar size={16} />
-                                                    <Typography variant="caption">
-                                                        {new Date(selectedEntry.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                    </Typography>
-                                                </Box>
-                                                {selectedEntry.location && (
-                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                        <MapPin size={16} />
-                                                        <Typography variant="caption">
-                                                            {selectedEntry.location.address.split(',')[0]}
-                                                        </Typography>
-                                                    </Box>
-                                                )}
-                                            </Box>
-                                        </Box>
-                                        <Box sx={{ display: 'flex', gap: 1 }}>
-                                            <IconButton
-                                                onClick={() => navigate(`/journal/${selectedEntry.id}`)}
-                                                color="primary"
-                                                title="View Entry"
-                                            >
-                                                <Eye size={20} />
-                                            </IconButton>
-                                            <IconButton
-                                                onClick={() => navigate(`/journal/${selectedEntry.id}`, { state: { isEditing: true } })}
-                                                color="primary"
-                                                title="Edit Entry"
-                                            >
-                                                <Edit2 size={20} />
-                                            </IconButton>
-                                            <IconButton
-                                                onClick={() => handleDeleteClick(selectedEntry.id)}
-                                                color="error"
-                                                title="Delete Entry"
-                                            >
-                                                <Trash2 size={20} />
-                                            </IconButton>
-                                        </Box>
-                                    </Box>
-
-                                    {/* Row 2: Sticker and Scrapbook Images */}
-                                    {(selectedSticker || (selectedEntry.image_urls && selectedEntry.image_urls.length > 0)) && (
-                                        <Box sx={{ minHeight: 80, display: 'flex', alignItems: 'center', gap: 4, position: 'relative', mb: 2 }}>
-                                            {selectedSticker && (
-                                                <Box
-                                                    component="img"
-                                                    src={selectedSticker.url}
-                                                    alt="sticker"
-                                                    width={80}
-                                                    sx={{
-                                                        zIndex: 10,
-                                                        objectFit: 'contain',
-                                                        height: 80
-                                                    }}
-                                                />
-                                            )}
-
-                                            {/* Scrapbook Images */}
-                                            {selectedEntry.image_urls && selectedEntry.image_urls.length > 0 && (
-                                                <ScrapbookGallery
-                                                    images={selectedEntry.image_urls}
-                                                    onImageClick={(index) => {
-                                                        setLightboxIndex(index);
-                                                        setLightboxOpen(true);
-                                                    }}
-                                                />
-                                            )}
-                                        </Box>
-                                    )}
+                                    {/* --- ATTACHMENTS --- */}
+                                    <EntryAttachments
+                                        sticker={selectedSticker}
+                                        images={selectedEntry?.image_urls}
+                                        onStickerClick={(e) => setStickerAnchor(e.currentTarget)} // TRIGGER STICKER POPOVER
+                                        onImageClick={(index) => {
+                                            setLightboxIndex(index);
+                                            setLightboxOpen(true);
+                                        }}
+                                    />
 
                                     <Divider sx={{ mb: 3 }} />
 
-                                    <div
-                                        className="ProseMirror"
-                                        dangerouslySetInnerHTML={{ __html: selectedEntry.text }}
-                                    />
+                                    <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
+                                        <div
+                                            className="ProseMirror"
+                                            dangerouslySetInnerHTML={{ __html: selectedEntry.text }}
+                                        />
 
-                                    {selectedEntry.tags && selectedEntry.tags.length > 0 && (
-                                        <Box sx={{ mt: 4, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                                            {selectedEntry.tags.map(tag => (
-                                                <Chip key={tag} label={`#${tag}`} variant="outlined" size="small" />
-                                            ))}
-                                        </Box>
-                                    )}
+                                        {selectedEntry.tags && selectedEntry.tags.length > 0 && (
+                                            <Box sx={{ mt: 4, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                                {selectedEntry.tags.map(tag => (
+                                                    <Chip key={tag} label={`#${tag}`} variant="outlined" size="small" />
+                                                ))}
+                                            </Box>
+                                        )}
+                                    </Box>
                                 </Paper>
                             </motion.div>
                         ) : (
@@ -386,6 +455,16 @@ export default function Journal() {
                 onClose={() => setLightboxOpen(false)}
                 images={selectedEntry?.image_urls || []}
                 initialIndex={lightboxIndex}
+                onDelete={handleDeleteImage}
+            />
+
+            <input
+                type="file"
+                ref={imageInputRef}
+                style={{ display: 'none' }}
+                multiple
+                accept="image/*"
+                onChange={handleFileUpload}
             />
         </Box>
     );

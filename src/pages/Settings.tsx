@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Box, Typography, Button, Paper, Avatar, Divider, Switch, Slider, Grid, Chip, Alert, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Stack } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
-import { useThemeSettings, ACCENT_COLORS } from '../context/ThemeContext';
+import { useThemeSettings } from '../context/ThemeContext';
+import { ACCENT_COLORS } from '../theme';
 import { useStickerContext } from '../context/StickerContext';
 import { LogOut, User, Download, Trash2, Moon, Sun, Type } from 'lucide-react';
 import { JournalService } from '../services/journal';
@@ -47,7 +48,7 @@ export default function Settings() {
       }
     }}>
       <Box sx={{ maxWidth: 800, mx: 'auto' }}>
-        <Typography variant="h4" component="h1" sx={{ mb: 4, fontFamily: 'Playfair Display' }}>
+        <Typography variant="h4" component="h1" sx={{ mb: 4 }}>
           Settings
         </Typography>
 
@@ -199,7 +200,7 @@ export default function Settings() {
         onClose={() => setDeleteDialogOpen(false)}
         PaperProps={{ sx: { borderRadius: 3, p: 1 } }}
       >
-        <DialogTitle sx={{ fontFamily: 'Playfair Display', fontWeight: 700 }}>
+        <DialogTitle sx={{ fontWeight: 700 }}>
           Delete Account?
         </DialogTitle>
         <DialogContent>

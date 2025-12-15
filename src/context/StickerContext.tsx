@@ -11,6 +11,7 @@ interface StickerContextType {
     loading: boolean;
     addSticker: (file: File) => Promise<void>;
     removeSticker: (stickerOrUrl: Sticker | string) => Promise<void>;
+    reorderStickers: (stickers: Sticker[]) => Promise<void>;
     restoreStickers: () => Promise<void>;
     canManage: boolean;
 }
@@ -90,12 +91,24 @@ export function StickerProvider({ children }: { children: ReactNode }) {
         }
     };
 
+    const reorderStickers = async (newStickers: Sticker[]) => {
+        if (!user) return;
+        try {
+            const urls = newStickers.map(s => s.url);
+            await StickerService.updateStickerOrder(user.uid, urls);
+        } catch (error) {
+            console.error("Error reordering stickers:", error);
+            throw error;
+        }
+    };
+
     return (
         <StickerContext.Provider value={{
             stickers,
             loading,
             addSticker,
             removeSticker,
+            reorderStickers,
             restoreStickers: async () => {
                 if (!user) return;
                 await StickerService.restoreStickersFromStorage(user.uid);

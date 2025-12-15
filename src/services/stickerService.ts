@@ -146,5 +146,10 @@ export const StickerService = {
             console.error("Error restoring stickers:", error);
             throw error;
         }
+    },
+
+    async updateStickerOrder(userId: string, stickers: string[]): Promise<void> {
+        const userDocRef = doc(db, COLLECTION_NAME, userId);
+        await updateDoc(userDocRef, { stickers });
     }
 };

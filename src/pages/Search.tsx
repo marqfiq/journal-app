@@ -48,7 +48,7 @@ export default function Search() {
     return (
         <Box sx={{ maxWidth: 800, mx: 'auto', pt: 8 }}>
             <Box sx={{ textAlign: 'center', mb: 6 }}>
-                <Typography variant="h3" component="h1" sx={{ fontFamily: 'Playfair Display', fontWeight: 700, mb: 2 }}>
+                <Typography variant="h3" component="h1" sx={{ fontWeight: 700, mb: 2 }}>
                     Search Memories
                 </Typography>
                 <Typography variant="body1" color="text.secondary">
