@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Box, Typography, Button, Paper, IconButton, useMediaQuery, useTheme, Divider, Chip, CircularProgress } from '@mui/material';
+import { Box, Typography, Button, Paper, IconButton, useMediaQuery, useTheme, Divider, Chip } from '@mui/material';
 import { Plus, Edit2, Trash2, X, Eye } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { JournalEntry } from '../types';
 import { JournalService } from '../services/journal';
 import { useAuth } from '../context/AuthContext';
@@ -21,6 +21,7 @@ export default function Journal() {
     const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
     const { user } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -58,11 +59,19 @@ export default function Journal() {
             const data = await JournalService.getEntries(user.uid);
             setEntries(data);
             if (data.length > 0 && !isMobile && !selectedEntryId) {
-                setSelectedEntryId(data[0].id);
+                // If returning from view, restore selection
+                if (location.state?.selectedEntryId) {
+                    setSelectedEntryId(location.state.selectedEntryId);
+                } else {
+                    setSelectedEntryId(data[0].id);
+                }
+            } else if (location.state?.selectedEntryId) {
+                // Even on mobile, or generally if state is passed, assume we might want to select it
+                setSelectedEntryId(location.state.selectedEntryId);
             }
         }
         loadEntries();
-    }, [user, isMobile]);
+    }, [user, isMobile, location.state]);
 
     const selectedEntry = entries.find(e => e.id === selectedEntryId);
 
@@ -210,7 +219,7 @@ export default function Journal() {
     return (
         <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 3 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
+                <Typography variant="h4" component="h1">
                     My Journal
                 </Typography>
                 <Button
@@ -366,7 +375,13 @@ export default function Journal() {
                                         customActions={
                                             <Box sx={{ display: 'flex', gap: 1 }}>
                                                 <IconButton
-                                                    onClick={() => navigate(`/journal/${selectedEntry.id}`)}
+                                                    onClick={() => navigate(`/journal/${selectedEntry.id}`, {
+                                                        state: {
+                                                            from: '/journal',
+                                                            label: 'Journal',
+                                                            context: { selectedEntryId: selectedEntry.id }
+                                                        }
+                                                    })}
                                                     color="primary"
                                                     title="View Full Page"
                                                     size="small"
@@ -374,7 +389,14 @@ export default function Journal() {
                                                     <Eye size={20} />
                                                 </IconButton>
                                                 <IconButton
-                                                    onClick={() => navigate(`/journal/${selectedEntry.id}`, { state: { isEditing: true } })}
+                                                    onClick={() => navigate(`/journal/${selectedEntry.id}`, {
+                                                        state: {
+                                                            isEditing: true,
+                                                            from: '/journal',
+                                                            label: 'Journal',
+                                                            context: { selectedEntryId: selectedEntry.id }
+                                                        }
+                                                    })}
                                                     color="primary"
                                                     title="Edit Text"
                                                     size="small"

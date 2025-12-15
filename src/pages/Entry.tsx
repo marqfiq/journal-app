@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { JournalService } from '../services/journal';
 import EntryEditor from '../components/EntryEditor';
 import DeleteDialog from '../components/DeleteDialog';
-import { JournalEntry } from '../types';
+import { JournalEntry, BackLocationState } from '../types';
 import { motion } from 'framer-motion';
 import { useAutosave } from '../hooks/useAutosave';
 import { SYSTEM_STICKERS } from '../constants/stickers';
@@ -240,6 +240,21 @@ export default function Entry() {
     }
   };
 
+  // Back Button Logic
+  // Back Button Logic
+  const handleBack = () => {
+    // Cast to unknown first to handle potential mixed state properties (like isEditing)
+    const state = location.state as unknown as BackLocationState;
+
+    if (state?.from) {
+      console.log('Navigating back to:', state.from, 'with context:', state.context);
+      navigate(state.from, { state: state.context });
+    } else {
+      console.log('No back state found, defaulting to /journal');
+      navigate('/journal');
+    }
+  };
+
   // Sticker Logic for display
   const selectedSticker = stickers.find(s => s.id === entry.sticker_id) ||
     SYSTEM_STICKERS.find(s => s.id === entry.sticker_id) ||
@@ -258,10 +273,10 @@ export default function Entry() {
         <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Button
             startIcon={<ArrowLeft />}
-            onClick={() => navigate('/journal')}
+            onClick={handleBack}
             sx={{ color: 'text.secondary' }}
           >
-            Back
+            {location.state?.label ? `Back to ${location.state.label}` : 'Back'}
           </Button>
 
           <Stack direction="row" spacing={2} alignItems="center">

@@ -1,17 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Box, Typography, Grid, Divider, useTheme, alpha } from '@mui/material';
 import CalendarView from '../components/CalendarView';
 import JournalSidebarItem from '../components/JournalSidebarItem';
 import { JournalService } from '../services/journal';
 import { useAuth } from '../context/AuthContext';
 import { JournalEntry } from '../types';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export default function Calendar() {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const theme = useTheme();
 
   useEffect(() => {
@@ -21,7 +22,11 @@ export default function Calendar() {
       setEntries(data);
     }
     loadEntries();
-  }, [user]);
+
+    if (location.state?.date) {
+      setSelectedDate(new Date(location.state.date));
+    }
+  }, [user, location.state]);
 
   const selectedEntries = selectedDate
     ? entries.filter(e => {
@@ -45,7 +50,7 @@ export default function Calendar() {
 
       <Grid container spacing={4} sx={{ height: '100%' }}>
         <Grid size={{ xs: 12, md: 8 }} sx={{ display: 'flex', flexDirection: 'column' }}>
-          <Typography variant="h4" component="h1" sx={{ mb: 4, fontWeight: 700 }}>
+          <Typography variant="h4" component="h1" sx={{ mb: 4 }}>
             Calendar
           </Typography>
           <CalendarView entries={entries} onDateSelect={setSelectedDate} />
@@ -77,7 +82,13 @@ export default function Calendar() {
                         key={entry.id}
                         entry={entry}
                         isSelected={false}
-                        onClick={() => navigate(`/journal/${entry.id}`)}
+                        onClick={() => navigate(`/journal/${entry.id}`, {
+                          state: {
+                            from: '/calendar',
+                            label: 'Calendar',
+                            context: { date: selectedDate?.getTime() }
+                          }
+                        })}
                         className="glassmorphism"
                         sx={{ border: 'none' }}
                       />
