@@ -4,6 +4,29 @@ export type ThemeMode = 'light' | 'dark';
 export type AccentColor = 'pink' | 'blue' | 'green' | 'purple' | 'orange';
 export type FontSize = 'small' | 'medium' | 'large';
 
+export const HEADER_FONTS = [
+  { name: 'Pompiere', value: '"Pompiere", serif' },
+  { name: 'Poiret One', value: '"Poiret One", serif' },
+  { name: 'Coming Soon', value: '"Coming Soon", cursive' },
+  { name: 'Short Stack', value: '"Short Stack", cursive' },
+  { name: 'Klee One', value: '"Klee One", cursive' },
+  { name: 'Playpen Sans', value: '"Playpen Sans", cursive' },
+  { name: 'Patrick Hand', value: '"Patrick Hand", cursive' },
+  { name: 'Gaegu', value: '"Gaegu", cursive' },
+  { name: 'DM Serif Text', value: '"DM Serif Text", serif' },
+  { name: 'Monoton', value: '"Monoton", cursive' },
+];
+
+export const BODY_FONTS = [
+  { name: 'Inter', value: '"Inter", sans-serif' },
+  { name: 'Roboto', value: '"Roboto", sans-serif' },
+  { name: 'Lato', value: '"Lato", sans-serif' },
+  { name: 'Short Stack', value: '"Short Stack", cursive' },
+  { name: 'Klee One', value: '"Klee One", cursive' },
+  { name: 'Playpen Sans', value: '"Playpen Sans", cursive' },
+  { name: 'Coming Soon', value: '"Coming Soon", cursive' },
+];
+
 export const ACCENT_COLORS: Record<AccentColor, { primary: string; secondary: string }> = {
   pink: { primary: '#E0B0B6', secondary: '#D4C4B7' },
   blue: { primary: '#A7C7E7', secondary: '#C4D4E0' },
@@ -44,23 +67,23 @@ export const getTheme = (mode: ThemeMode, accentColor: AccentColor, fontSize: Fo
       },
     },
     typography: {
-      fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+      fontFamily: 'var(--font-sans)',
       fontSize: 14 * fontSizeMultiplier,
       h1: {
         fontFamily: 'var(--font-serif)',
-        fontWeight: 700
+        fontWeight: 'var(--font-weight-header, 700)' as React.CSSProperties['fontWeight'],
       },
       h2: {
         fontFamily: 'var(--font-serif)',
-        fontWeight: 700,
+        fontWeight: 'var(--font-weight-header, 700)' as React.CSSProperties['fontWeight'],
       },
       h3: {
         fontFamily: 'var(--font-serif)',
-        fontWeight: 700,
+        fontWeight: 'var(--font-weight-header, 700)' as React.CSSProperties['fontWeight'],
       },
       h4: {
         fontFamily: 'var(--font-serif)',
-        fontWeight: 700,
+        fontWeight: 'var(--font-weight-header, 700)' as React.CSSProperties['fontWeight'],
       },
       button: {
         textTransform: 'none',

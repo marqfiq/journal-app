@@ -1,9 +1,8 @@
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import { Box, Paper, ToggleButton, ToggleButtonGroup, IconButton, Tooltip, Divider } from '@mui/material';
-import { Bold, Italic, List, ListOrdered, Image as ImageIcon, Quote, Undo, Redo } from 'lucide-react';
 
 interface EntryEditorProps {
     initialContent?: string;
@@ -107,7 +106,7 @@ export default function EntryEditor({ initialContent = '', onUpdate, editable = 
         },
         editorProps: {
             attributes: {
-                class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none min-h-[300px] p-4 dark:prose-invert',
+                class: 'prose mx-auto focus:outline-none min-h-[300px] p-4 dark:prose-invert',
             },
         },
     });

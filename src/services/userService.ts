@@ -6,6 +6,8 @@ export interface UserSettings {
     themeMode?: 'light' | 'dark';
     accentColor?: 'pink' | 'blue' | 'green' | 'purple' | 'orange';
     fontSize?: 'small' | 'medium' | 'large';
+    headerFont?: string;
+    bodyFont?: string;
 }
 
 const USERS_COLLECTION = 'users';
