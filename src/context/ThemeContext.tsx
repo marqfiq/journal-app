@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ThemeProvider as MUIThemeProvider } from '@mui/material/styles';
-import { getTheme, ACCENT_COLORS, ThemeMode, AccentColor, FontSize } from '../theme';
+import { getTheme, ACCENT_COLORS, ThemeMode, AccentColor, FontSize, HEADER_FONTS, BODY_FONTS } from '../theme';
 import { useAuth } from './AuthContext';
 import { getUserSettings, updateUserSettings } from '../services/userService';
 
@@ -8,9 +8,13 @@ interface ThemeContextType {
     mode: ThemeMode;
     accentColor: AccentColor;
     fontSize: FontSize;
+    headerFont: string;
+    bodyFont: string;
     setMode: (mode: ThemeMode) => void;
     setAccentColor: (color: AccentColor) => void;
     setFontSize: (size: FontSize) => void;
+    setHeaderFont: (font: string) => void;
+    setBodyFont: (font: string) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -40,6 +44,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         }
         return 'medium';
     });
+    const [headerFont, setHeaderFont] = useState<string>(() => {
+        return localStorage.getItem('headerFont') || HEADER_FONTS[0].value;
+    });
+    const [bodyFont, setBodyFont] = useState<string>(() => {
+        return localStorage.getItem('bodyFont') || BODY_FONTS[0].value;
+    });
 
     // 1. Sync FROM Cloud on Login
     useEffect(() => {
@@ -51,6 +61,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
                         if (settings.themeMode) setMode(settings.themeMode);
                         if (settings.accentColor) setAccentColor(settings.accentColor);
                         if (settings.fontSize) setFontSize(settings.fontSize);
+                        if (settings.headerFont) setHeaderFont(settings.headerFont);
+                        if (settings.bodyFont) setBodyFont(settings.bodyFont);
                     }
                 } catch (error) {
                     console.error("Failed to fetch user settings:", error);
@@ -88,15 +100,40 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         localStorage.setItem('fontSize', fontSize);
+
+        const multipliers = { small: 0.875, medium: 1, large: 1.125 };
+        document.documentElement.style.setProperty('--font-scale', multipliers[fontSize].toString());
+
         if (user) {
             updateUserSettings(user.uid, { fontSize }).catch(console.error);
         }
     }, [fontSize, user]);
 
+    useEffect(() => {
+        localStorage.setItem('headerFont', headerFont);
+        document.documentElement.style.setProperty('--font-serif', headerFont);
+
+        // Custom weight for Monoton
+        const weight = headerFont.includes('Monoton') ? '200' : '700';
+        document.documentElement.style.setProperty('--font-weight-header', weight);
+
+        if (user) {
+            updateUserSettings(user.uid, { headerFont }).catch(console.error);
+        }
+    }, [headerFont, user]);
+
+    useEffect(() => {
+        localStorage.setItem('bodyFont', bodyFont);
+        document.documentElement.style.setProperty('--font-sans', bodyFont);
+        if (user) {
+            updateUserSettings(user.uid, { bodyFont }).catch(console.error);
+        }
+    }, [bodyFont, user]);
+
     const theme = getTheme(mode, accentColor, fontSize);
 
     return (
-        <ThemeContext.Provider value={{ mode, accentColor, fontSize, setMode, setAccentColor, setFontSize }}>
+        <ThemeContext.Provider value={{ mode, accentColor, fontSize, headerFont, bodyFont, setMode, setAccentColor, setFontSize, setHeaderFont, setBodyFont }}>
             <MUIThemeProvider theme={theme}>
                 {children}
             </MUIThemeProvider>

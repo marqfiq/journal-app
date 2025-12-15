@@ -46,6 +46,7 @@
 /* TipTap Editor Styles */
 .ProseMirror {
   @apply outline-none min-h-[200px];
+  font-family: var(--font-sans) !important;
   color: #1a1a1a !important;
 }
 
@@ -54,7 +55,8 @@
 }
 
 .ProseMirror p {
-  @apply mb-4 leading-7 text-lg;
+  @apply mb-4 leading-7;
+  font-size: calc(1.125rem * var(--font-scale, 1));
   color: #1a1a1a !important;
 }
 
@@ -63,7 +65,8 @@
 }
 
 .ProseMirror h1 {
-  @apply text-3xl font-serif font-bold mb-4 mt-6;
+  @apply font-serif font-bold mb-4 mt-6;
+  font-size: calc(1.875rem * var(--font-scale, 1));
   color: #1a1a1a !important;
 }
 
@@ -72,7 +75,8 @@
 }
 
 .ProseMirror h2 {
-  @apply text-2xl font-serif font-bold mb-3 mt-5;
+  @apply font-serif font-bold mb-3 mt-5;
+  font-size: calc(1.5rem * var(--font-scale, 1));
   color: #1a1a1a !important;
 }
 
@@ -81,7 +85,8 @@
 }
 
 .ProseMirror h3 {
-  @apply text-xl font-serif font-bold mb-2 mt-4;
+  @apply font-serif font-bold mb-2 mt-4;
+  font-size: calc(1.25rem * var(--font-scale, 1));
   color: #1a1a1a !important;
 }
 

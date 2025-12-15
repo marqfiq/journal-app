@@ -2,15 +2,15 @@ import React, { useState } from 'react';
 import { Box, Typography, Button, Paper, Avatar, Divider, Switch, Slider, Grid, Chip, Alert, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Stack } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
 import { useThemeSettings } from '../context/ThemeContext';
-import { ACCENT_COLORS } from '../theme';
-import { useStickerContext } from '../context/StickerContext';
+import { ACCENT_COLORS, HEADER_FONTS, BODY_FONTS } from '../theme';
+
 import { LogOut, User, Download, Trash2, Moon, Sun, Type } from 'lucide-react';
 import { JournalService } from '../services/journal';
 
 export default function Settings() {
   const { user, logout } = useAuth();
-  const { mode, setMode, accentColor, setAccentColor, fontSize, setFontSize } = useThemeSettings();
-  const { restoreStickers } = useStickerContext();
+  const { mode, setMode, accentColor, setAccentColor, fontSize, setFontSize, headerFont, setHeaderFont, bodyFont, setBodyFont } = useThemeSettings();
+
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const handleExport = async () => {
@@ -98,7 +98,7 @@ export default function Settings() {
             {/* Font Size */}
             <Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                <Type size={20} />
+
                 <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Font Size</Typography>
               </Box>
               <Slider
@@ -112,8 +112,79 @@ export default function Settings() {
                   { value: 2, label: 'Medium' },
                   { value: 3, label: 'Large' },
                 ]}
-                sx={{ mt: 2 }}
+                sx={{
+                  mt: 2,
+                  '& .MuiSlider-markLabel': {
+                    fontSize: '0.875rem',
+                  },
+                  '& .MuiSlider-markLabel[data-index="0"]': {
+                    transform: 'translateX(0%)',
+                  },
+                  '& .MuiSlider-markLabel[data-index="2"]': {
+                    transform: 'translateX(-100%)',
+                  },
+                }}
               />
+            </Box>
+
+            <Divider sx={{ my: 3 }} />
+
+            {/* Font Style */}
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Font Style</Typography>
+              </Box>
+
+              <Grid container spacing={3}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>Header Font</Typography>
+                  <Box
+                    component="select"
+                    value={headerFont}
+                    onChange={(e) => setHeaderFont(e.target.value)}
+                    sx={{
+                      width: '100%',
+                      p: 1.5,
+                      borderRadius: 3,
+                      border: 1,
+                      borderColor: 'divider',
+                      bgcolor: 'background.paper',
+                      fontFamily: 'inherit',
+                      '&:focus': { outline: 'none', borderColor: 'primary.main' }
+                    }}
+                  >
+                    {HEADER_FONTS.map((font) => (
+                      <option key={font.name} value={font.value} style={{ fontFamily: font.value }}>
+                        {font.name}
+                      </option>
+                    ))}
+                  </Box>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>Body Font</Typography>
+                  <Box
+                    component="select"
+                    value={bodyFont}
+                    onChange={(e) => setBodyFont(e.target.value)}
+                    sx={{
+                      width: '100%',
+                      p: 1.5,
+                      borderRadius: 3,
+                      border: 1,
+                      borderColor: 'divider',
+                      bgcolor: 'background.paper',
+                      fontFamily: 'inherit',
+                      '&:focus': { outline: 'none', borderColor: 'primary.main' }
+                    }}
+                  >
+                    {BODY_FONTS.map((font) => (
+                      <option key={font.name} value={font.value} style={{ fontFamily: font.value }}>
+                        {font.name}
+                      </option>
+                    ))}
+                  </Box>
+                </Grid>
+              </Grid>
             </Box>
           </Paper>
         </Box>
@@ -134,38 +205,7 @@ export default function Settings() {
               </Button>
             </Box>
 
-            <Divider sx={{ my: 3 }} />
 
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 24 }}>
-                  {/* Using a generic icon for restore */}
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                    <path d="M3 3v5h5" />
-                  </svg>
-                </Box>
-                <Box>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Restore Lost Stickers</Typography>
-                  <Typography variant="body2" color="text.secondary">Recover custom stickers from cloud storage</Typography>
-                </Box>
-              </Box>
-              <Button
-                variant="outlined"
-                onClick={async () => {
-                  try {
-                    await restoreStickers();
-                    alert("Stickers restored successfully!");
-                  } catch (e) {
-                    console.error(e);
-                    alert("Failed to restore stickers.");
-                  }
-                }}
-                sx={{ borderRadius: 3 }}
-              >
-                Restore
-              </Button>
-            </Box>
           </Paper>
         </Box>
 
