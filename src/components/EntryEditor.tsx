@@ -3,6 +3,7 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import { Box, Paper, ToggleButton, ToggleButtonGroup, IconButton, Tooltip, Divider } from '@mui/material';
+import { Bold, Italic, List, ListOrdered, Quote, Undo, Redo } from 'lucide-react';
 
 interface EntryEditorProps {
     initialContent?: string;
