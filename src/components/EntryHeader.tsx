@@ -74,7 +74,7 @@ const SortableStickerItem = ({ sticker, isReordering, onSelect, onRemove, canMan
         position: 'relative' as const,
         opacity: isDragging ? 0.2 : 1,
         zIndex: isDragging ? 0 : 1,
-        touchAction: 'none'
+        touchAction: isReordering ? 'none' : 'pan-y'
     };
 
     const handleClick = (e: React.MouseEvent) => {
@@ -505,6 +505,7 @@ export default function EntryHeader({
                             onDragStart={handleDragStart}
                             onDragEnd={handleDragEnd}
                             onDragCancel={handleDragCancel}
+                            autoScroll={{ layoutShiftCompensation: false }}
                         >
                             <SortableContext
                                 items={orderedStickers.map((s: any) => s.id)}

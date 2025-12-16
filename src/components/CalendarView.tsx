@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Box, Typography, IconButton, Grid, Paper, useTheme, Popover, Button } from '@mui/material';
 import { ChevronLeft, ChevronRight, Flower } from 'lucide-react';
 import { JournalEntry } from '../types';
@@ -9,15 +9,23 @@ import { useStickers } from '../hooks/useStickers';
 interface CalendarViewProps {
     entries: JournalEntry[];
     onDateSelect: (date: Date) => void;
+    initialDate?: Date;
 }
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-export default function CalendarView({ entries, onDateSelect }: CalendarViewProps) {
-    const [currentDate, setCurrentDate] = useState(new Date());
+export default function CalendarView({ entries, onDateSelect, initialDate }: CalendarViewProps) {
+    const [currentDate, setCurrentDate] = useState(initialDate || new Date());
     const { stickers } = useStickers();
     const theme = useTheme();
     const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
+
+    // Update calendar view when initialDate changes (e.g. navigation back)
+    useEffect(() => {
+        if (initialDate) {
+            setCurrentDate(initialDate);
+        }
+    }, [initialDate]);
 
     const handleMonthClick = (event: React.MouseEvent<HTMLButtonElement>) => {
         setAnchorEl(event.currentTarget);

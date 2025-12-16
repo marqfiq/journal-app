@@ -120,7 +120,7 @@ export default function EntryEditor({ initialContent = '', onUpdate, editable = 
 
     return (
         <Box sx={{ width: '100%' }}>
-            {editable && <MenuBar editor={editor} />}
+            {editable ? <MenuBar editor={editor} /> : <Divider sx={{ mb: 2 }} />}
             <Box sx={{ p: 0 }}>
                 <EditorContent editor={editor} />
             </Box>

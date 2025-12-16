@@ -51,10 +51,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         return localStorage.getItem('bodyFont') || BODY_FONTS[0].value;
     });
 
+    const [settingsLoaded, setSettingsLoaded] = useState(false);
+
     // 1. Sync FROM Cloud on Login
     useEffect(() => {
         const fetchSettings = async () => {
             if (user) {
+                // Reset loaded state when user changes/starts loading
+                setSettingsLoaded(false);
                 try {
                     const settings = await getUserSettings(user.uid);
                     if (settings) {
@@ -66,7 +70,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
                     }
                 } catch (error) {
                     console.error("Failed to fetch user settings:", error);
+                } finally {
+                    setSettingsLoaded(true);
                 }
+            } else {
+                setSettingsLoaded(false);
             }
         };
         fetchSettings();
@@ -81,10 +89,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
             document.documentElement.classList.remove('dark');
         }
 
-        if (user) {
+        if (user && settingsLoaded) {
             updateUserSettings(user.uid, { themeMode: mode }).catch(console.error);
         }
-    }, [mode, user]);
+    }, [mode, user, settingsLoaded]);
 
     useEffect(() => {
         localStorage.setItem('accentColor', accentColor);
@@ -93,10 +101,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         document.documentElement.style.setProperty('--color-primary', colors.primary);
         document.documentElement.style.setProperty('--color-secondary', colors.secondary);
 
-        if (user) {
+        if (user && settingsLoaded) {
             updateUserSettings(user.uid, { accentColor }).catch(console.error);
         }
-    }, [accentColor, user]);
+    }, [accentColor, user, settingsLoaded]);
 
     useEffect(() => {
         localStorage.setItem('fontSize', fontSize);
@@ -104,10 +112,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         const multipliers = { small: 0.875, medium: 1, large: 1.125 };
         document.documentElement.style.setProperty('--font-scale', multipliers[fontSize].toString());
 
-        if (user) {
+        if (user && settingsLoaded) {
             updateUserSettings(user.uid, { fontSize }).catch(console.error);
         }
-    }, [fontSize, user]);
+    }, [fontSize, user, settingsLoaded]);
 
     useEffect(() => {
         localStorage.setItem('headerFont', headerFont);
@@ -117,18 +125,18 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         const weight = headerFont.includes('Monoton') ? '200' : '700';
         document.documentElement.style.setProperty('--font-weight-header', weight);
 
-        if (user) {
+        if (user && settingsLoaded) {
             updateUserSettings(user.uid, { headerFont }).catch(console.error);
         }
-    }, [headerFont, user]);
+    }, [headerFont, user, settingsLoaded]);
 
     useEffect(() => {
         localStorage.setItem('bodyFont', bodyFont);
         document.documentElement.style.setProperty('--font-sans', bodyFont);
-        if (user) {
+        if (user && settingsLoaded) {
             updateUserSettings(user.uid, { bodyFont }).catch(console.error);
         }
-    }, [bodyFont, user]);
+    }, [bodyFont, user, settingsLoaded]);
 
     const theme = getTheme(mode, accentColor, fontSize);
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Box, Typography, Grid, Divider, useTheme, alpha } from '@mui/material';
+import { Box, Typography, Grid, Divider, useTheme, alpha, Button } from '@mui/material';
 import CalendarView from '../components/CalendarView';
 import JournalSidebarItem from '../components/JournalSidebarItem';
 import { JournalService } from '../services/journal';
@@ -9,11 +9,17 @@ import { useNavigate, useLocation } from 'react-router-dom';
 
 export default function Calendar() {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
+
+  const [selectedDate, setSelectedDate] = useState<Date | null>(() => {
+    if (location.state?.date) {
+      return new Date(location.state.date);
+    }
+    return new Date();
+  });
 
   useEffect(() => {
     async function loadEntries() {
@@ -22,11 +28,7 @@ export default function Calendar() {
       setEntries(data);
     }
     loadEntries();
-
-    if (location.state?.date) {
-      setSelectedDate(new Date(location.state.date));
-    }
-  }, [user, location.state]);
+  }, [user]);
 
   const selectedEntries = selectedDate
     ? entries.filter(e => {
@@ -53,7 +55,7 @@ export default function Calendar() {
           <Typography variant="h4" component="h1" sx={{ mb: 4 }}>
             Calendar
           </Typography>
-          <CalendarView entries={entries} onDateSelect={setSelectedDate} />
+          <CalendarView entries={entries} onDateSelect={setSelectedDate} initialDate={selectedDate || new Date()} />
         </Grid>
 
         <Grid size={{ xs: 12, md: 4 }}>
@@ -72,6 +74,51 @@ export default function Calendar() {
             </Typography>
 
             <Divider sx={{ mb: 3, flexShrink: 0 }} />
+
+            {selectedDate && (
+              <Button
+                variant="outlined"
+                fullWidth
+                onClick={() => {
+                  const now = new Date();
+                  const newEntryDate = new Date(selectedDate);
+                  newEntryDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+
+                  navigate('/journal/new', {
+                    state: {
+                      entry: {
+                        date: newEntryDate.getTime(),
+                        mood: 0,
+                        tags: [],
+                        text: '',
+                        image_urls: []
+                      },
+                      from: '/calendar',
+                      label: 'Calendar',
+                      context: { date: selectedDate.getTime() }
+                    }
+                  });
+                }}
+                sx={{
+                  mb: 0,
+                  color: 'primary.main',
+                  borderColor: 'primary.main',
+                  textTransform: 'none',
+                  py: .5,
+                  borderRadius: 2,
+                  fontWeight: 600,
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    bgcolor: 'transparent',
+                    borderColor: 'primary.main',
+                    boxShadow: `0 0 15px ${alpha(theme.palette.primary.main, 0.5)}`,
+                    transform: 'translateY(-1px)'
+                  }
+                }}
+              >
+                + Add Entry for This Day
+              </Button>
+            )}
 
             <Box sx={{ flexGrow: 1, overflowY: 'auto', pr: 1, p: 2, mx: -2 }}>
               {selectedDate ? (
