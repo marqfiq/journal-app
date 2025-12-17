@@ -28,7 +28,7 @@ export default function Journal() {
     const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
 
     // Sticker Hook
-    const { stickers, addSticker, removeSticker, canManage } = useStickers();
+    const { stickers, addSticker, removeSticker, reorderStickers, canManage } = useStickers();
 
     // Lightbox State
     const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -357,6 +357,7 @@ export default function Journal() {
                                         onRemoveSticker={removeSticker}
                                         isReordering={isReordering}
                                         onReorderToggle={() => setIsReordering(!isReordering)}
+                                        onStickerReorder={reorderStickers}
 
                                         // Controlled Props
                                         moodAnchor={moodAnchor}
