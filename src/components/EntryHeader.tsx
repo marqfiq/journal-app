@@ -442,7 +442,12 @@ export default function EntryHeader({
                 <Popover
                     open={Boolean(stickerAnchor)}
                     anchorEl={stickerAnchor}
-                    onClose={onStickerClose}
+                    onClose={() => {
+                        if (isReordering) {
+                            onReorderToggle();
+                        }
+                        onStickerClose();
+                    }}
                     anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
                     transformOrigin={{ vertical: 'top', horizontal: 'center' }}
                     PaperProps={{ sx: { borderRadius: 2, boxShadow: 4 } }}
