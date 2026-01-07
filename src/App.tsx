@@ -1,11 +1,10 @@
-import { CssBaseline } from '@mui/material';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
-import { ThemeProvider } from './context/ThemeContext';
-import { StickerProvider } from './context/StickerContext';
+import { AnimatePresence } from 'framer-motion';
+import { useAuth } from './context/AuthContext';
 import Layout from './components/Layout';
-import ProtectedRoute from './components/ProtectedRoute';
-import Login from './pages/Login';
+import LoadingScreen from './components/LoadingScreen';
+import LandingPage from './pages/LandingPage';
+import SignIn from './pages/SignIn';
 import Home from './pages/Home';
 import Calendar from './pages/Calendar';
 import Settings from './pages/Settings';
@@ -14,18 +13,20 @@ import Journal from './pages/Journal';
 import Search from './pages/Search';
 
 function App() {
+  const { user, loading } = useAuth();
+
   return (
-    <AuthProvider>
-      <ThemeProvider>
-        <CssBaseline />
-        <StickerProvider>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/" element={
-              <ProtectedRoute>
-                <Layout />
-              </ProtectedRoute>
-            }>
+    <>
+      <AnimatePresence>
+        {loading && <LoadingScreen />}
+      </AnimatePresence>
+
+      {!loading && (
+        <Routes>
+          <Route path="/signin" element={<SignIn />} />
+
+          {user ? (
+            <Route path="/" element={<Layout />}>
               <Route index element={<Home />} />
               <Route path="journal" element={<Journal />} />
               <Route path="journal/:id" element={<Entry />} />
@@ -34,10 +35,15 @@ function App() {
               <Route path="settings" element={<Settings />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
-          </Routes>
-        </StickerProvider>
-      </ThemeProvider>
-    </AuthProvider>
+          ) : (
+            <>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </>
+          )}
+        </Routes>
+      )}
+    </>
   );
 }
 
