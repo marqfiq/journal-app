@@ -16,19 +16,42 @@ import { MAX_IMAGES_PER_ENTRY } from '../constants/config';
 import { useStickers } from '../hooks/useStickers';
 import EntryHeader from '../components/EntryHeader';
 import EntryAttachments from '../components/EntryAttachments';
+import { startTrialForUser } from '../services/userService';
+import TrialConfirmationModal from '../components/TrialConfirmationModal';
 
 export default function Entry() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+
+  interface LocationState {
+    entry?: Partial<JournalEntry>;
+    isEditing?: boolean;
+    label?: string;
+    from?: string;
+    context?: any;
+  }
+  const locationState = location.state as LocationState | null;
+
+  const { user, userAccess } = useAuth();
   const theme = useTheme();
   const isNew = id === 'new';
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(() => {
     if (isNew) return true;
-    return location.state?.isEditing || false;
+    return locationState?.isEditing || false;
   });
+
+  // Redirect if trying to create new entry while expired
+  useEffect(() => {
+    if (isNew && userAccess?.accessLevel === 'expired') {
+      navigate('/journal', { replace: true });
+      // Short timeout to ensure hash is set after navigation completes
+      setTimeout(() => {
+        window.location.hash = 'pricing';
+      }, 50);
+    }
+  }, [isNew, userAccess, navigate]);
 
   // Sticker Hook
   const { stickers, loading: stickersLoading, addSticker, removeSticker, reorderStickers, canManage } = useStickers();
@@ -43,6 +66,9 @@ export default function Entry() {
   // Reorder State
   const [isReordering, setIsReordering] = useState(false);
 
+  // Trial Modal State
+  const [trialModalOpen, setTrialModalOpen] = useState(false);
+
   // --- LIFTED STATE FOR ENTRY HEADER ---
   const [moodAnchor, setMoodAnchor] = useState<null | HTMLElement>(null);
   const [stickerAnchor, setStickerAnchor] = useState<null | HTMLElement>(null);
@@ -54,8 +80,8 @@ export default function Entry() {
   };
 
   const [entry, setEntry] = useState<Partial<JournalEntry>>(() => {
-    if (location.state?.entry) {
-      return location.state.entry;
+    if (locationState?.entry) {
+      return locationState.entry;
     }
     return {
       text: '',
@@ -69,7 +95,7 @@ export default function Entry() {
 
   const [loading, setLoading] = useState(() => {
     if (location.state?.entry) return false;
-    return !isNew;
+    return true; // Always start loading to prevent flicker
   });
 
   // Load entry data
@@ -94,7 +120,15 @@ export default function Entry() {
         });
         setIsEditing(true);
         localStorage.removeItem('entry-new');
-        setLoading(false);
+
+        // Anti-flicker: Delay showing UI slightly to allow auth/redirect to settle
+        if (userAccess?.accessLevel === 'expired') {
+          return; // Keep loading true, redirect will happen
+        }
+
+        setTimeout(() => {
+          setLoading(false);
+        }, 50);
         return;
       }
 
@@ -119,14 +153,26 @@ export default function Entry() {
       }
     };
     loadData();
-  }, [id, isNew, user, location.state]);
+  }, [id, isNew, user, location.state, userAccess]);
 
   // Autosave Handler
   const creationPromise = useRef<Promise<any> | null>(null);
 
   const handleAutosave = useCallback(async (currentEntry: Partial<JournalEntry>) => {
     if (!user) return;
-    if (!currentEntry.text && isNew) return;
+
+    // Check if new entry is actually empty (handling empty HTML tags from editor)
+    if (isNew) {
+      const hasText = currentEntry.text && currentEntry.text.replace(/<[^>]*>/g, '').trim().length > 0;
+      const hasMood = (currentEntry.mood || 0) > 0;
+      const hasSticker = !!currentEntry.sticker_id;
+      const hasImages = (currentEntry.image_urls?.length || 0) > 0;
+      const hasTags = (currentEntry.tags?.length || 0) > 0;
+
+      if (!hasText && !hasMood && !hasSticker && !hasImages && !hasTags) {
+        return;
+      }
+    }
 
     if (isNew) {
       if (creationPromise.current) {
@@ -175,7 +221,30 @@ export default function Entry() {
 
   const handleDone = async () => {
     await saveNow();
+
+    // Check for trial start eligibility
+    if (user) {
+      try {
+        const result = await startTrialForUser(user.uid);
+        if (result.trialStarted) {
+          setIsEditing(false); // Switch to View Mode animation first
+          setTimeout(() => {
+            setTrialModalOpen(true);
+          }, 3000); // Wait 3 seconds before showing the modal
+          return;
+        }
+      } catch (error) {
+        console.error("Failed to check trial status", error);
+      }
+    }
+
     setIsEditing(false);
+  };
+
+  const handleTrialModalClose = () => {
+    setTrialModalOpen(false);
+    // Navigate to Calendar as requested in requirements
+    navigate('/calendar');
   };
 
   // Image Upload Ref
@@ -260,7 +329,40 @@ export default function Entry() {
     SYSTEM_STICKERS.find(s => s.id === entry.sticker_id) ||
     (entry.sticker_id?.startsWith('http') ? { id: entry.sticker_id, url: entry.sticker_id, owner_id: 'unknown' } : null);
 
-  if (loading) return <Box sx={{ p: 4 }}>Loading...</Box>;
+  // Animation Variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    show: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        type: "spring" as const,
+        stiffness: 300,
+        damping: 24
+      }
+    }
+  };
+
+  if (isNew && userAccess?.accessLevel === 'expired') {
+    return null;
+  }
+
+  if (loading) return (
+    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+      <CircularProgress />
+    </Box>
+  );
 
   return (
     <Box sx={{
@@ -269,129 +371,165 @@ export default function Entry() {
       pb: 10,
       '&::-webkit-scrollbar-track': { my: 2 }
     }}>
-      <Box sx={{ maxWidth: 800, mx: 'auto', p: 3 }}>
-        <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Button
-            startIcon={<ArrowLeft />}
-            onClick={handleBack}
-            sx={{ color: 'text.secondary' }}
-          >
-            {location.state?.label ? `Back to ${location.state.label}` : 'Back'}
-          </Button>
+      <motion.div
+        key={isEditing ? 'editing' : 'viewing'}
+        variants={containerVariants}
+        initial="hidden"
+        animate="show"
+        style={{ maxWidth: 800, margin: '0 auto', padding: '24px' }}
+      >
+        {/* Toolbar */}
+        <motion.div variants={itemVariants}>
+          <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Button
+              startIcon={<ArrowLeft />}
+              onClick={handleBack}
+              sx={{ color: 'text.secondary' }}
+              disabled={trialModalOpen}
+            >
+              {location.state?.label ? `Back to ${location.state.label}` : 'Back'}
+            </Button>
 
-          <Stack direction="row" spacing={2} alignItems="center">
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 40, justifyContent: 'flex-end' }}>
-              {(isEditing || isNew) && (status === 'unsaved' || status === 'saving' || status === 'offline') && (
-                <Tooltip title={status === 'offline' ? "Offline" : "Saving..."}>
-                  <Check size={20} color="#9e9e9e" />
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 40, justifyContent: 'flex-end' }}>
+                {(isEditing || isNew) && (status === 'unsaved' || status === 'saving' || status === 'offline') && (
+                  <Tooltip title={status === 'offline' ? "Offline" : "Saving..."}>
+                    <Check size={20} color="#9e9e9e" />
+                  </Tooltip>
+                )}
+                {(isEditing || isNew) && (status === 'saved' || status === 'idle') && (
+                  <Tooltip title="Saved">
+                    <Check size={20} color={theme.palette.primary.main} strokeWidth={2.5} />
+                  </Tooltip>
+                )}
+                {(isEditing || isNew) && status === 'error' && (
+                  <Tooltip title="Failed to save. Click to retry.">
+                    <IconButton size="small" onClick={retry} sx={{ p: 0.5 }}>
+                      <AlertCircle size={20} color="#d32f2f" />
+                    </IconButton>
+                  </Tooltip>
+                )}
+              </Box>
+
+              {!isNew && (
+                <Tooltip title={isEditing ? "Save Changes" : "Edit Entry"}>
+                  <Button
+                    variant={isEditing ? "outlined" : "text"}
+                    size="small"
+                    onClick={isEditing ? handleDone : () => {
+                      if (userAccess?.accessLevel === 'expired') {
+                        window.location.hash = 'pricing';
+                      } else {
+                        setIsEditing(true);
+                      }
+                    }}
+                    sx={{
+                      borderRadius: isEditing ? 2 : '50%',
+                      minWidth: isEditing ? 64 : 40,
+                      width: isEditing ? 'auto' : 40,
+                      height: isEditing ? 'auto' : 40,
+                      px: isEditing ? 2 : 0,
+                      minHeight: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    {isEditing ? "Done" : <Pencil size={20} />}
+                  </Button>
                 </Tooltip>
               )}
-              {(isEditing || isNew) && (status === 'saved' || status === 'idle') && (
-                <Tooltip title="Saved">
-                  <Check size={20} color={theme.palette.primary.main} strokeWidth={2.5} />
-                </Tooltip>
-              )}
-              {(isEditing || isNew) && status === 'error' && (
-                <Tooltip title="Failed to save. Click to retry.">
-                  <IconButton size="small" onClick={retry} sx={{ p: 0.5 }}>
-                    <AlertCircle size={20} color="#d32f2f" />
+
+              {!isNew && isEditing && (
+                <Tooltip title="Delete Entry">
+                  <IconButton
+                    onClick={() => setDeleteDialogOpen(true)}
+                    color="error"
+                    sx={{
+                      ml: 1,
+                      '&:hover': { bgcolor: 'rgba(211, 47, 47, 0.15)' }
+                    }}
+                  >
+                    <Trash2 size={20} />
                   </IconButton>
                 </Tooltip>
               )}
-            </Box>
+            </Stack>
+          </Box>
+        </motion.div>
 
-            {!isNew && (
-              <Button
-                variant={isEditing ? "outlined" : "text"}
-                size="small"
-                onClick={isEditing ? handleDone : () => setIsEditing(true)}
-                sx={{
-                  borderRadius: isEditing ? 2 : '50%',
-                  minWidth: isEditing ? 64 : 40,
-                  width: isEditing ? 'auto' : 40,
-                  height: isEditing ? 'auto' : 40,
-                  px: isEditing ? 2 : 0,
-                  minHeight: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                {isEditing ? "Done" : <Pencil size={20} />}
-              </Button>
-            )}
-
-            {!isNew && isEditing && (
-              <IconButton
-                onClick={() => setDeleteDialogOpen(true)}
-                color="error"
-                sx={{
-                  ml: 1,
-                  '&:hover': { bgcolor: 'rgba(211, 47, 47, 0.15)' }
-                }}
-              >
-                <Trash2 size={20} />
-              </IconButton>
-            )}
-          </Stack>
-        </Box>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <Paper elevation={0} sx={{ borderRadius: 4, mb: 3, border: 1, borderColor: 'divider' }}>
+        {/* Main Card */}
+        <motion.div variants={itemVariants}>
+          <Paper elevation={0} sx={{ borderRadius: 4, mb: 3, border: 1, borderColor: 'divider', overflow: 'hidden' }}>
 
             <Box sx={{ p: 4, pb: 2 }}>
-              <EntryHeader
-                entry={entry}
-                onUpdate={(updates) => setEntry((prev: any) => ({ ...prev, ...updates }))}
-                onImageClick={handleImageClick}
-                stickers={stickers}
-                canManageStickers={canManage}
-                onAddSticker={addSticker}
-                onRemoveSticker={removeSticker}
-                isReordering={isReordering}
-                onReorderToggle={handleReorderToggle}
+              <motion.div variants={itemVariants}>
+                <EntryHeader
+                  entry={entry}
+                  onUpdate={(updates) => setEntry((prev: any) => ({ ...prev, ...updates }))}
+                  onImageClick={handleImageClick}
+                  stickers={stickers}
+                  canManageStickers={canManage}
+                  onAddSticker={addSticker}
+                  onRemoveSticker={removeSticker}
+                  isReordering={isReordering}
+                  onReorderToggle={handleReorderToggle}
+                  disableImages={(entry.image_urls?.length || 0) >= MAX_IMAGES_PER_ENTRY}
 
-                // Controlled Props
-                moodAnchor={moodAnchor}
-                onMoodClick={(e) => setMoodAnchor(e.currentTarget)}
-                onMoodClose={() => setMoodAnchor(null)}
-                stickerAnchor={stickerAnchor}
-                onStickerClick={(e) => setStickerAnchor(e.currentTarget)}
-                onStickerClose={() => setStickerAnchor(null)}
-                dateOpen={dateOpen}
-                onDateOpen={() => setDateOpen(true)}
-                onDateClose={() => setDateOpen(false)}
-                timeOpen={timeOpen}
-                onTimeOpen={() => setTimeOpen(true)}
-                onTimeClose={() => setTimeOpen(false)}
-                onStickerReorder={reorderStickers}
-              />
+                  // Controlled Props
+                  moodAnchor={moodAnchor}
+                  onMoodClick={(e) => {
+                    if (userAccess?.accessLevel === 'expired') window.location.hash = 'pricing';
+                    else setMoodAnchor(e.currentTarget);
+                  }}
+                  onMoodClose={() => setMoodAnchor(null)}
+                  stickerAnchor={stickerAnchor}
+                  onStickerClick={(e) => {
+                    if (userAccess?.accessLevel === 'expired') window.location.hash = 'pricing';
+                    else setStickerAnchor(e.currentTarget);
+                  }}
+                  onStickerClose={() => setStickerAnchor(null)}
+                  dateOpen={dateOpen}
+                  onDateOpen={() => {
+                    if (userAccess?.accessLevel === 'expired') window.location.hash = 'pricing';
+                    else setDateOpen(true);
+                  }}
+                  onDateClose={() => setDateOpen(false)}
+                  timeOpen={timeOpen}
+                  onTimeOpen={() => {
+                    if (userAccess?.accessLevel === 'expired') window.location.hash = 'pricing';
+                    else setTimeOpen(true);
+                  }}
+                  onTimeClose={() => setTimeOpen(false)}
+                  onStickerReorder={reorderStickers}
+                />
+              </motion.div>
 
-
-              <EntryAttachments
-                sticker={selectedSticker}
-                images={entry.image_urls}
-                onStickerClick={(e) => setStickerAnchor(e.currentTarget)}
-                onImageClick={(index) => {
-                  setLightboxIndex(index);
-                  setLightboxOpen(true);
-                }}
-              />
+              <motion.div variants={itemVariants}>
+                <EntryAttachments
+                  sticker={selectedSticker}
+                  images={entry.image_urls}
+                  onStickerClick={(e) => setStickerAnchor(e.currentTarget)}
+                  onImageClick={(index) => {
+                    setLightboxIndex(index);
+                    setLightboxOpen(true);
+                  }}
+                />
+              </motion.div>
             </Box>
 
             <Box sx={{ px: 4, pb: 4, position: 'relative', zIndex: 1 }}>
-              <EntryEditor
-                initialContent={entry.text}
-                onUpdate={(content) => setEntry(prev => ({ ...prev, text: content }))}
-                editable={isEditing}
-              />
+              <motion.div variants={itemVariants}>
+                <EntryEditor
+                  initialContent={entry.text}
+                  onUpdate={(content) => setEntry(prev => ({ ...prev, text: content }))}
+                  editable={isEditing}
+                />
+              </motion.div>
             </Box>
           </Paper>
         </motion.div>
-      </Box>
+      </motion.div>
 
       {/* DIALOGS */}
       <DeleteDialog
@@ -408,6 +546,11 @@ export default function Entry() {
         images={entry?.image_urls || []}
         initialIndex={lightboxIndex}
         onDelete={isEditing ? handleDeleteImage : undefined}
+      />
+
+      <TrialConfirmationModal
+        open={trialModalOpen}
+        onClose={handleTrialModalClose}
       />
 
       {/* Hidden input for image uploads (triggered by EntryHeader) */}

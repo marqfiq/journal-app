@@ -1,0 +1,40 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // --- 1. JOURNAL ENTRIES ---
+    // Path: entries/USER_ID/filename.png
+    match /entries/{userId}/{fileName=**} {
+      
+      // Only the owner can view their own images
+      allow read: if request.auth != null && request.auth.uid == userId;
+      
+      // Owner can upload IF:
+      // 1. They are authenticated
+      // 2. File is an image
+      // 3. File is smaller than 5MB (Safety Net)
+      allow write: if request.auth != null 
+        && request.auth.uid == userId
+        && request.resource.contentType.matches('image/.*')
+        && request.resource.size < 5 * 1024 * 1024; 
+      
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // --- 2. USER STICKERS (Future Phase) ---
+    match /stickers/{userId}/{fileName=**} {
+       allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // --- 3. SYSTEM STICKERS (Public) ---
+    match /system-stickers/{fileName=**} {
+       allow read: if true;
+       allow write: if false; 
+    }
+    
+    // Block everything else
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

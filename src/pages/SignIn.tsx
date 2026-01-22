@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useThemeSettings } from '../context/ThemeContext';
+import { APP_NAME } from '../constants/app';
+
 
 export default function SignIn() {
     const { signInWithGoogle, user, loading } = useAuth();
@@ -67,7 +69,7 @@ export default function SignIn() {
                         />
 
                         <Typography variant="h3" component="h1" gutterBottom sx={{ color: 'primary.main', mb: 1, fontFamily: 'var(--font-serif)' }}>
-                            Helen's Journal
+                            {APP_NAME}
                         </Typography>
 
                         <Typography variant="body1" color="text.secondary" align="center" sx={{ mb: 4 }}>

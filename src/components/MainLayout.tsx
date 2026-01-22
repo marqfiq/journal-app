@@ -1,6 +1,8 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { Home, Calendar, Settings } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { APP_NAME } from '../constants/app'
+
 
 const MainLayout = () => {
   const navigate = useNavigate()
@@ -19,7 +21,7 @@ const MainLayout = () => {
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex w-64 flex-col glassmorphism border-r border-white/20">
         <div className="p-6">
-          <h1 className="text-2xl font-semibold text-gray-800">Helen's Journal</h1>
+          <h1 className="text-2xl font-semibold text-gray-800">{APP_NAME}</h1>
         </div>
         <nav className="flex-1 px-4 space-y-2">
           {navItems.map((item) => {
@@ -29,11 +31,10 @@ const MainLayout = () => {
               <motion.button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
-                  active
-                    ? 'bg-white/30 text-gray-900'
-                    : 'text-gray-700 hover:bg-white/20'
-                }`}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${active
+                  ? 'bg-white/30 text-gray-900'
+                  : 'text-gray-700 hover:bg-white/20'
+                  }`}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
@@ -62,9 +63,8 @@ const MainLayout = () => {
               <motion.button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors ${
-                  active ? 'text-gray-900' : 'text-gray-600'
-                }`}
+                className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors ${active ? 'text-gray-900' : 'text-gray-600'
+                  }`}
                 whileTap={{ scale: 0.95 }}
               >
                 <Icon size={22} strokeWidth={active ? 2.5 : 2} />

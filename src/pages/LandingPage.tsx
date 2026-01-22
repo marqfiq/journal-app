@@ -1,17 +1,20 @@
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { ShieldCheck, Download, LockKeyhole, ChevronDown } from 'lucide-react';
-import { Button, Box, Container, Typography, Paper, Divider, useTheme } from '@mui/material';
+import { ChevronDown } from 'lucide-react';
+import { Button, Box, Container, Typography, Paper, Divider, useTheme, Snackbar, Alert } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { useThemeSettings } from '../context/ThemeContext';
+import { APP_NAME } from '../constants/app';
+
 
 export default function LandingPage() {
     const navigate = useNavigate();
     const { mode } = useThemeSettings();
     const theme = useTheme();
     const originRef = useRef<HTMLElement>(null);
-    const { scrollY } = useScroll();
+    const containerRef = useRef<HTMLDivElement>(null);
+    const { scrollY } = useScroll({ container: containerRef });
     const scrollOpacity = useTransform(scrollY, [0, 200], [1, 0]);
 
     const isDark = mode === 'dark';
@@ -45,35 +48,54 @@ export default function LandingPage() {
         [0, 1],
         ['rgba(0,0,0,0)', isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)']
     );
-    
-    // Use standard CSS box-shadow but animate the color alpha
+
     const headerBoxShadow = useTransform(
         headerShadowOpacity,
         [0, 0.1],
         ['0px 0px 0px rgba(0,0,0,0)', `0px 4px 20px rgba(0,0,0,${isDark ? 0.3 : 0.05})`]
     );
 
+    const [deletionSnackbarOpen, setDeletionSnackbarOpen] = useState(false);
+
+    useEffect(() => {
+        const scheduled = localStorage.getItem('accountScheduledForDeletion');
+        if (scheduled) {
+            setDeletionSnackbarOpen(true);
+            localStorage.removeItem('accountScheduledForDeletion');
+        }
+    }, []);
+
     return (
-        <Box sx={{ minHeight: '100vh', bgcolor: bgColor, color: textColor, display: 'flex', flexDirection: 'column' }}>
+        <Box
+            ref={containerRef}
+            sx={{
+                height: '100%',
+                overflowY: 'auto',
+                bgcolor: bgColor,
+                color: textColor,
+                display: 'flex',
+                flexDirection: 'column'
+            }}
+        >
 
             {/* Header */}
-            <motion.header 
-                style={{ 
-                    position: 'sticky', 
-                    top: 0, 
+            <motion.header
+                style={{
+                    position: 'sticky',
+                    top: 0,
                     zIndex: 10,
                     backgroundColor: bgColor, // Ensure background is opaque so content scrolls behind
                     borderBottom: '1px solid',
                     borderColor: headerBorderColor,
                     boxShadow: headerBoxShadow,
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
+                    display: 'flex',
+                    justifyContent: 'space-between',
                     alignItems: 'center',
                     padding: '24px 32px' // Matches px: 4, py: 3 (8px * 4 = 32, 8px * 3 = 24)
                 }}
             >
                 <Typography variant="h6" component="div" sx={{ fontFamily: 'var(--font-serif)', fontWeight: 'var(--font-weight-header)' }}>
-                    Helen's Journal
+                    {APP_NAME}
                 </Typography>
                 <Button
                     onClick={handleSignIn}
@@ -175,7 +197,7 @@ export default function LandingPage() {
                             Origin Story
                         </Typography>
                         <Typography variant="body1" align="center" sx={{ lineHeight: 1.8, fontSize: '1.05rem', color: mutedColor }}>
-                            Hi, I'm Mark, the creator of Helen's Journal. I built this app after my wife lost access to years of journal entries when another app locked her out of a premium account.
+                            Hi, I'm Mark, the creator of {APP_NAME}. I built this app after my wife lost access to years of journal entries when another app locked her out of a premium account.
                             That felt like a betrayal. So for Christmas 2025, I built her this so that she had an easy trusted way to remember all her past memories, and continue to make new ones.
                             I'm sharing it now for others who want a safe and simple place to write and look back on their memories.
                         </Typography>
@@ -214,9 +236,25 @@ export default function LandingPage() {
                                 <Typography variant="body2" sx={{ color: mutedColor }}>/ year</Typography>
                             </Paper>
                         </Box>
-                        <Box sx={{ mt: 4, color: mutedColor }}>
-                            <Typography variant="body2" gutterBottom>One month free. No card required.</Typography>
-                            <Typography variant="body2" sx={{ fontWeight: 500 }}>You can always read and export your writing.</Typography>
+                        <Box sx={{ mt: 6, color: mutedColor, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <Button
+                                onClick={handleSignIn}
+                                variant="contained"
+                                size="large"
+                                disableElevation
+                                sx={{
+                                    px: 5,
+                                    py: 1.5,
+                                    borderRadius: '50px',
+                                    textTransform: 'none',
+                                    fontSize: '1.1rem',
+                                    mb: 4
+                                }}
+                            >
+                                Start writing
+                            </Button>
+                            <Typography variant="body2" gutterBottom sx={{ fontWeight: 700 }}>One month free. No card required.</Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 700 }}>You can always read and export your writing.</Typography>
                         </Box>
                     </Box>
 
@@ -233,12 +271,23 @@ export default function LandingPage() {
             }}>
                 <Container maxWidth="lg">
                     <Box sx={{ display: 'flex', justifyContent: 'center', gap: 4 }}>
-                        <Typography variant="body2" component="a" href="#" sx={{ color: mutedColor, textDecoration: 'none', '&:hover': { color: textColor } }}>Privacy</Typography>
-                        <Typography variant="body2" component="a" href="#" sx={{ color: mutedColor, textDecoration: 'none', '&:hover': { color: textColor } }}>Terms</Typography>
-                        <Typography variant="body2" component="a" href="#" sx={{ color: mutedColor, textDecoration: 'none', '&:hover': { color: textColor } }}>Contact</Typography>
+                        <Typography variant="body2" component="a" href="/privacy" sx={{ color: mutedColor, textDecoration: 'none', '&:hover': { color: textColor } }}>Privacy</Typography>
+                        <Typography variant="body2" component="a" href="/terms" sx={{ color: mutedColor, textDecoration: 'none', '&:hover': { color: textColor } }}>Terms</Typography>
+                        <Typography variant="body2" component="a" href="mailto:privacy@ambryjournal.com" sx={{ color: mutedColor, textDecoration: 'none', '&:hover': { color: textColor } }}>Contact</Typography>
                     </Box>
                 </Container>
             </Box>
-        </Box>
+
+            <Snackbar
+                open={deletionSnackbarOpen}
+                autoHideDuration={8000}
+                onClose={() => setDeletionSnackbarOpen(false)}
+                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            >
+                <Alert onClose={() => setDeletionSnackbarOpen(false)} severity="warning" variant="filled" sx={{ width: '100%' }}>
+                    Account scheduled for deletion. You can restore it by logging in within 30 days.
+                </Alert>
+            </Snackbar>
+        </Box >
     );
 }
