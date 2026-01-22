@@ -4,6 +4,7 @@ import { getAuth, Auth, connectAuthEmulator } from 'firebase/auth'
 import { getFirestore, Firestore, connectFirestoreEmulator } from 'firebase/firestore'
 import { getFunctions, Functions, connectFunctionsEmulator } from 'firebase/functions'
 import { getStorage, FirebaseStorage, connectStorageEmulator } from 'firebase/storage'
+import { getAnalytics, Analytics } from 'firebase/analytics'
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -13,6 +14,7 @@ const firebaseConfig = {
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 }
 
 // Initialize Firebase
@@ -23,6 +25,7 @@ export const auth: Auth = getAuth(app)
 export const db: Firestore = getFirestore(app)
 export const functions: Functions = getFunctions(app)
 export const storage: FirebaseStorage = getStorage(app)
+export const analytics: Analytics = getAnalytics(app)
 
 // For local development with emulator
 if (import.meta.env.DEV) {
