@@ -1,4 +1,29 @@
 // types.ts
+import { Timestamp } from 'firebase/firestore';
+
+export interface User {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+
+  // Access & Subscription Fields
+  trial_start_at?: Timestamp | null;
+  trial_end_at?: Timestamp | null;
+  subscription_status?: 'none' | 'trialing' | 'active' | 'expired' | 'canceled';
+  has_written_first_entry?: boolean;
+  pro_override?: boolean;
+
+  // Stripe Fields (Future)
+  stripeCustomerId?: string | null;
+  stripeSubscriptionId?: string | null;
+  stripePriceId?: string | null;
+  stripeCurrentPeriodEnd?: Timestamp | null;
+  stripeCancelAtPeriodEnd?: boolean;
+
+  // Account Management
+  scheduledForDeletionAt?: Timestamp | null;
+}
 
 export interface JournalEntry {
   // Identifiers

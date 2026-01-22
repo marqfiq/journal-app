@@ -10,7 +10,12 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Coming+Soon&family=DM+Serif+Text&family=Gaegu&family=Inter:wght@300;400;500;600;700&family=Klee+One&family=Lato:wght@300;400;700&family=Monoton&family=Patrick+Hand&family=Playpen+Sans:wght@100..800&family=Poiret+One&family=Pompiere&family=Roboto:wght@300;400;500;700&family=Short+Stack&display=swap"
     rel="stylesheet">
-  <title>Helen's Journal</title>
+  <script>
+    const appName = window.location.hostname.includes('helens-journal')
+      ? "Helen's Journal"
+      : "Ambry Journal";
+    document.title = appName;
+  </script>
 </head>
 
 <body>

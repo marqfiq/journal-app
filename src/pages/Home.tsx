@@ -9,7 +9,7 @@ import { motion } from 'framer-motion';
 import { Calendar as CalendarIcon } from 'lucide-react';
 
 export default function Home() {
-  const { user } = useAuth();
+  const { user, userAccess } = useAuth();
   const theme = useTheme();
   const navigate = useNavigate();
   const [recentEntries, setRecentEntries] = useState<JournalEntry[]>([]);
@@ -27,6 +27,20 @@ export default function Home() {
     }
     loadRecent();
   }, [user]);
+
+  const handleCreateEntry = (e?: React.MouseEvent) => {
+    e?.stopPropagation(); // Prevent bubbling if from button
+    if (userAccess?.accessLevel === 'expired') {
+      window.location.hash = 'pricing';
+    } else {
+      navigate('/journal/new', {
+        state: {
+          from: '/',
+          label: 'Home'
+        }
+      });
+    }
+  };
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -77,12 +91,7 @@ export default function Home() {
                 // Removed CSS animations
               }
             }}
-            onClick={() => navigate('/journal/new', {
-              state: {
-                from: '/',
-                label: 'Home'
-              }
-            })}
+            onClick={handleCreateEntry}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
           >
@@ -100,15 +109,7 @@ export default function Home() {
                   px: 3
                 }}
                 startIcon={<Plus />}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate('/journal/new', {
-                    state: {
-                      from: '/',
-                      label: 'Home'
-                    }
-                  });
-                }}
+                onClick={handleCreateEntry}
               >
                 Start Writing
               </Button>

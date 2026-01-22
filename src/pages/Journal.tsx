@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Box, Typography, Button, Paper, IconButton, useMediaQuery, useTheme, Divider, Chip } from '@mui/material';
+import { Box, Typography, Button, Paper, IconButton, useMediaQuery, useTheme, Divider, Chip, Tooltip } from '@mui/material';
 import { Plus, Edit2, Trash2, X, Eye } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { JournalEntry } from '../types';
@@ -375,43 +375,46 @@ export default function Journal() {
 
                                         customActions={
                                             <Box sx={{ display: 'flex', gap: 1 }}>
-                                                <IconButton
-                                                    onClick={() => navigate(`/journal/${selectedEntry.id}`, {
-                                                        state: {
-                                                            from: '/journal',
-                                                            label: 'Journal',
-                                                            context: { selectedEntryId: selectedEntry.id }
-                                                        }
-                                                    })}
-                                                    color="primary"
-                                                    title="View Full Page"
-                                                    size="small"
-                                                >
-                                                    <Eye size={20} />
-                                                </IconButton>
-                                                <IconButton
-                                                    onClick={() => navigate(`/journal/${selectedEntry.id}`, {
-                                                        state: {
-                                                            isEditing: true,
-                                                            from: '/journal',
-                                                            label: 'Journal',
-                                                            context: { selectedEntryId: selectedEntry.id }
-                                                        }
-                                                    })}
-                                                    color="primary"
-                                                    title="Edit Text"
-                                                    size="small"
-                                                >
-                                                    <Edit2 size={20} />
-                                                </IconButton>
-                                                <IconButton
-                                                    onClick={() => handleDeleteClick(selectedEntry.id)}
-                                                    color="error"
-                                                    title="Delete Entry"
-                                                    size="small"
-                                                >
-                                                    <Trash2 size={20} />
-                                                </IconButton>
+                                                <Tooltip title="View Full Page">
+                                                    <IconButton
+                                                        onClick={() => navigate(`/journal/${selectedEntry.id}`, {
+                                                            state: {
+                                                                from: '/journal',
+                                                                label: 'Journal',
+                                                                context: { selectedEntryId: selectedEntry.id }
+                                                            }
+                                                        })}
+                                                        color="primary"
+                                                        size="small"
+                                                    >
+                                                        <Eye size={20} />
+                                                    </IconButton>
+                                                </Tooltip>
+                                                <Tooltip title="Edit Entry">
+                                                    <IconButton
+                                                        onClick={() => navigate(`/journal/${selectedEntry.id}`, {
+                                                            state: {
+                                                                isEditing: true,
+                                                                from: '/journal',
+                                                                label: 'Journal',
+                                                                context: { selectedEntryId: selectedEntry.id }
+                                                            }
+                                                        })}
+                                                        color="primary"
+                                                        size="small"
+                                                    >
+                                                        <Edit2 size={20} />
+                                                    </IconButton>
+                                                </Tooltip>
+                                                <Tooltip title="Delete Entry">
+                                                    <IconButton
+                                                        onClick={() => handleDeleteClick(selectedEntry.id)}
+                                                        color="error"
+                                                        size="small"
+                                                    >
+                                                        <Trash2 size={20} />
+                                                    </IconButton>
+                                                </Tooltip>
                                             </Box>
                                         }
                                     />

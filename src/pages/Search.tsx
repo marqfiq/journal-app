@@ -1,13 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { Box, Typography, TextField, InputAdornment, Chip, Grid, Card, CardContent, useTheme, alpha } from '@mui/material';
-import { Search as SearchIcon, Calendar, Sticker, Image as ImageIcon } from 'lucide-react';
-import { JournalEntry, BackLocationState } from '../types';
+import { Box, Typography, TextField, InputAdornment, Grid, Card, CardContent, useTheme, alpha } from '@mui/material';
+import { Search as SearchIcon, Sticker, Image as ImageIcon } from 'lucide-react';
+import { JournalEntry } from '../types';
 import { JournalService } from '../services/journal';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-
-const SUGGESTIONS = ['Happy memories', 'Last week', 'Gratitude', 'Travel', 'Dreams'];
+import { motion } from 'framer-motion';
 
 export default function Search() {
     const [query, setQuery] = useState('');
@@ -75,10 +73,6 @@ export default function Search() {
         }
     }, [query, entries]);
 
-    const handleSuggestionClick = (suggestion: string) => {
-        setQuery(suggestion);
-    };
-
     const truncateText = (html: string, maxLength: number = 150) => {
         const tmp = document.createElement('DIV');
         tmp.innerHTML = html;
@@ -87,7 +81,7 @@ export default function Search() {
     };
 
     // Derived styles based on scrollRatio
-    const isSticky = scrollRatio >= 1;
+
     const width = 100 - (30 * scrollRatio); // 100% -> 70%
     // Reduce height more aggressive: Start at 1, end at 0.25
     const paddingY = 1 - (0.75 * scrollRatio);
@@ -165,34 +159,6 @@ export default function Search() {
                         />
                     </Box>
                 </Box>
-
-                <AnimatePresence>
-                    {!query && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                        >
-                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, justifyContent: 'center', mt: isSticky ? 4 : 0 }}>
-                                {SUGGESTIONS.map((suggestion) => (
-                                    <Chip
-                                        key={suggestion}
-                                        label={suggestion}
-                                        onClick={() => handleSuggestionClick(suggestion)}
-                                        sx={{
-                                            bgcolor: 'background.paper',
-                                            border: 1,
-                                            borderColor: 'divider',
-                                            borderRadius: 2,
-                                            cursor: 'pointer',
-                                            '&:hover': { bgcolor: 'action.hover', borderColor: 'primary.main' }
-                                        }}
-                                    />
-                                ))}
-                            </Box>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
 
                 <Box sx={{ mt: 6 }}>
                     {query && (

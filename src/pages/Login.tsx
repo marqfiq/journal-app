@@ -1,12 +1,15 @@
 import React from 'react';
-import { Box, Button, Typography, Paper, Container } from '@mui/material';
+import { Box, Button, Typography, Paper, Container, useTheme, alpha } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { APP_NAME } from '../constants/app';
+
 
 export default function Login() {
   const { signInWithGoogle, user } = useAuth();
   const navigate = useNavigate();
+  const theme = useTheme();
 
   React.useEffect(() => {
     if (user) {
@@ -29,7 +32,7 @@ export default function Login() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, #FAF9F6 0%, #F5E6E8 100%)'
+        background: `linear-gradient(135deg, ${theme.palette.background.default} 0%, ${alpha(theme.palette.primary.main, 0.2)} 100%)`
       }}
     >
       <Container maxWidth="xs">
@@ -46,9 +49,10 @@ export default function Login() {
               flexDirection: 'column',
               alignItems: 'center',
               borderRadius: 4,
-              bgcolor: 'rgba(255, 255, 255, 0.8)',
+              bgcolor: alpha(theme.palette.background.paper, 0.8),
               backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255, 255, 255, 0.3)'
+              border: '1px solid',
+              borderColor: 'divider'
             }}
           >
             <Box
@@ -59,7 +63,7 @@ export default function Login() {
             />
 
             <Typography variant="h3" component="h1" gutterBottom sx={{ color: 'primary.main', mb: 1 }}>
-              Helen's Journal
+              {APP_NAME}
             </Typography>
 
             <Typography variant="body1" color="text.secondary" align="center" sx={{ mb: 4 }}>

@@ -218,6 +218,7 @@ interface EntryHeaderProps {
     onTimeClose: () => void;
     customActions?: React.ReactNode;
     onStickerReorder?: (newOrder: any[]) => void;
+    disableImages?: boolean;
 }
 
 export default function EntryHeader({
@@ -244,6 +245,7 @@ export default function EntryHeader({
     onTimeClose,
     customActions,
     onStickerReorder,
+    disableImages = false,
 }: EntryHeaderProps) {
     const dateAnchorRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -359,12 +361,14 @@ export default function EntryHeader({
                         />
 
                         {(entry.mood || 0) > 0 && (
-                            <Box
-                                onClick={onMoodClick}
-                                sx={{ fontSize: '1.5rem', cursor: 'pointer', '&:hover': { transform: 'scale(1.1)' } }}
-                            >
-                                {['😢', '😕', '😐', '🙂', '😄'][(entry.mood!) - 1]}
-                            </Box>
+                            <Tooltip title="Change Mood">
+                                <Box
+                                    onClick={onMoodClick}
+                                    sx={{ fontSize: '1.5rem', cursor: 'pointer', '&:hover': { transform: 'scale(1.1)' } }}
+                                >
+                                    {['😢', '😕', '😐', '🙂', '😄'][(entry.mood!) - 1]}
+                                </Box>
+                            </Tooltip>
                         )}
                     </Box>
                     {customActions ? customActions : (
@@ -373,6 +377,7 @@ export default function EntryHeader({
                             onMoodClick={onMoodClick}
                             onStickerClick={onStickerClick}
                             onImageClick={onImageClick}
+                            disableImages={disableImages}
                         />
                     )}
                 </Box>

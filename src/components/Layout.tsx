@@ -4,12 +4,15 @@ import { Menu as MenuIcon, Book, Calendar, Search, Home, Plus, Settings, Chevron
 import AppIcon from './AppIcon';
 import { useNavigate, useLocation, useOutlet } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../context/AuthContext';
+import { APP_NAME } from '../constants/app';
+
 
 const DRAWER_WIDTH = 280;
 const COLLAPSED_DRAWER_WIDTH = 88;
 
 const MENU_ITEMS = [
-    { text: 'Home', icon: Home, path: '/' },
+    { text: 'Home', icon: Home, path: '/home' },
     { text: 'Journal', icon: Book, path: '/journal' },
     { text: 'Calendar', icon: Calendar, path: '/calendar' },
     { text: 'Search', icon: Search, path: '/search' },
@@ -24,6 +27,7 @@ export default function Layout() {
     const navigate = useNavigate();
     const location = useLocation();
     const element = useOutlet();
+    const { userAccess } = useAuth();
 
     const handleDrawerToggle = () => {
         setMobileOpen(!mobileOpen);
@@ -94,6 +98,9 @@ export default function Layout() {
                     <>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                             <AppIcon size={40} />
+                            <Typography variant="h6" sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
+                                {APP_NAME}
+                            </Typography>
                         </Box>
                         {!isMobile && (
                             <IconButton onClick={handleCollapseToggle} sx={{ color: 'text.secondary' }}>
@@ -201,7 +208,13 @@ export default function Layout() {
                         transition: 'transform 0.2s',
                         zIndex: 10
                     }}
-                    onClick={() => navigate('/journal/new')}
+                    onClick={() => {
+                        if (userAccess?.accessLevel === 'expired') {
+                            window.location.hash = 'pricing';
+                        } else {
+                            navigate('/journal/new');
+                        }
+                    }}
                 >
                     <Plus color="white" />
                 </Fab>
@@ -235,7 +248,7 @@ export default function Layout() {
                         <MenuIcon />
                     </IconButton>
                     <Typography variant="h6" sx={{ ml: 2, fontWeight: 700 }}>
-                        Helen's Journal
+                        {APP_NAME}
                     </Typography>
                 </Box>
             )}
