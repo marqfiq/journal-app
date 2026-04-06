@@ -146,3 +146,22 @@
   content: attr(data-placeholder);
   @apply text-gray-400 float-left h-0 pointer-events-none;
 }
+
+@keyframes shimmer {
+  0% {
+    opacity: 0.3;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 0.3;
+    transform: scale(0.95);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite ease-in-out;
+}

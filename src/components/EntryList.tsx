@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Box, Typography, Card, CardContent, Chip, TextField, InputAdornment, Skeleton, Grid } from '@mui/material';
+import { useEffect, useState } from 'react';
+import { Box, Typography, Card, CardContent, Chip, TextField, InputAdornment, Skeleton, Grid, useTheme, useMediaQuery } from '@mui/material';
 import { Search, Calendar as CalendarIcon, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { JournalEntry } from '../types';
@@ -14,6 +14,8 @@ export default function EntryList() {
     const [searchQuery, setSearchQuery] = useState('');
     const { user } = useAuth();
     const navigate = useNavigate();
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
     useEffect(() => {
         async function loadEntries() {
@@ -45,11 +47,10 @@ export default function EntryList() {
         });
     };
 
-    const truncateText = (html: string, maxLength: number = 150) => {
+    const stripHtml = (html: string) => {
         const tmp = document.createElement('DIV');
         tmp.innerHTML = html;
-        const text = tmp.textContent || tmp.innerText || "";
-        return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+        return tmp.textContent || tmp.innerText || "";
     };
 
     if (loading) {
@@ -92,7 +93,7 @@ export default function EntryList() {
                     <Typography variant="body2">Start writing to create your first memory.</Typography>
                 </Box>
             ) : (
-                <Grid container spacing={3} sx={{ p: 3, mx: -3, width: 'calc(100% + 48px)' }}>
+                <Grid container spacing={isMobile ? 1.5 : 3} sx={{ p: isMobile ? 1 : 3, mx: isMobile ? -1 : -3, width: isMobile ? 'calc(100% + 16px)' : 'calc(100% + 48px)' }}>
                     {filteredEntries.map((entry, index) => (
                         <Grid size={{ xs: 12 }} key={entry.id}>
                             <motion.div
@@ -111,7 +112,7 @@ export default function EntryList() {
                                     }}
                                     onClick={() => navigate(`/journal/${entry.id}`)}
                                 >
-                                    <CardContent sx={{ p: 3 }}>
+                                    <CardContent sx={{ p: isMobile ? 2 : 3 }}>
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary', fontSize: '0.875rem' }}>
                                                 <CalendarIcon size={16} />
@@ -128,8 +129,16 @@ export default function EntryList() {
                                             )}
                                         </Box>
 
-                                        <Typography variant="body1" sx={{ mb: 2, lineHeight: 1.6, color: 'text.primary' }}>
-                                            {truncateText(entry.text)}
+                                        <Typography variant="body1" sx={{
+                                            mb: 2,
+                                            lineHeight: 1.6,
+                                            color: 'text.primary',
+                                            display: '-webkit-box',
+                                            overflow: 'hidden',
+                                            WebkitBoxOrient: 'vertical',
+                                            WebkitLineClamp: 3,
+                                        }}>
+                                            {stripHtml(entry.text)}
                                         </Typography>
 
                                         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>

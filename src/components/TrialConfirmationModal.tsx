@@ -1,5 +1,5 @@
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, Box } from '@mui/material';
-import { PartyPopper } from 'lucide-react';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, Box, Stack, useTheme } from '@mui/material';
+import { PartyPopper, Check } from 'lucide-react';
 
 interface TrialConfirmationModalProps {
     open: boolean;
@@ -7,6 +7,7 @@ interface TrialConfirmationModalProps {
 }
 
 export default function TrialConfirmationModal({ open, onClose }: TrialConfirmationModalProps) {
+    const theme = useTheme();
     return (
         <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
             <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
@@ -36,13 +37,24 @@ export default function TrialConfirmationModal({ open, onClose }: TrialConfirmat
                         Your entries are safe and securely stored.
                     </Typography>
 
-                    <Box sx={{ bgcolor: 'background.paper', p: 2, borderRadius: 2, border: 1, borderColor: 'divider' }}>
-                        <Typography variant="caption" display="block" color="text.secondary">
-                            Included in your trial:
+                    <Box sx={{ bgcolor: 'background.paper', p: 2, borderRadius: 2, border: 1, borderColor: 'divider', textAlign: 'left' }}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, mb: 1.5, display: 'block', textTransform: 'uppercase', letterSpacing: 1 }}>
+                            Your trial includes:
                         </Typography>
-                        <Typography variant="body2" sx={{ mt: 0.5 }}>
-                            ✅ Unlimited Journals • ✅ Mood Tracking • ✅ Photo Attachments
-                        </Typography>
+                        <Stack spacing={1}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                <Check size={16} color={theme.palette.primary.main} strokeWidth={3} />
+                                <Typography variant="body2" sx={{ fontWeight: 500 }}>Unlimited journal entries</Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                <Check size={16} color={theme.palette.primary.main} strokeWidth={3} />
+                                <Typography variant="body2" sx={{ fontWeight: 500 }}>Daily mood tracking</Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                <Check size={16} color={theme.palette.primary.main} strokeWidth={3} />
+                                <Typography variant="body2" sx={{ fontWeight: 500 }}>Photo & sticker attachments</Typography>
+                            </Box>
+                        </Stack>
                     </Box>
                 </DialogContent>
 

@@ -12,18 +12,21 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { StickerProvider } from './context/StickerContext';
+import { JournalProvider } from './context/JournalContext';
 
 createRoot(document.getElementById('root')!).render(
   <ErrorBoundary>
     <BrowserRouter>
       <LocalizationProvider dateAdapter={AdapterDayjs}>
         <AuthProvider>
-          <ThemeProvider>
-            <CssBaseline />
-            <StickerProvider>
-              <App />
-            </StickerProvider>
-          </ThemeProvider>
+          <JournalProvider>
+            <ThemeProvider>
+              <CssBaseline />
+              <StickerProvider>
+                <App />
+              </StickerProvider>
+            </ThemeProvider>
+          </JournalProvider>
         </AuthProvider>
       </LocalizationProvider>
     </BrowserRouter>

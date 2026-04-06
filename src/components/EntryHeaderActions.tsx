@@ -8,6 +8,7 @@ interface EntryHeaderActionsProps {
     onStickerClick: (event: React.MouseEvent<HTMLElement>) => void;
     onImageClick: () => void;
     disableImages?: boolean;
+    uploadingImages?: boolean;
 }
 
 export default function EntryHeaderActions({
@@ -15,25 +16,32 @@ export default function EntryHeaderActions({
     onMoodClick,
     onStickerClick,
     onImageClick,
-    disableImages = false
+    disableImages = false,
+    uploadingImages = false
 }: EntryHeaderActionsProps) {
+    const moodEmojis = ['😢', '😕', '😐', '🙂', '😄'];
+
     return (
         <Box sx={{ display: 'flex', gap: 1 }}>
             <Tooltip title="Set Mood">
                 <IconButton onClick={onMoodClick} color={currentMood > 0 ? 'primary' : 'default'} size="small">
-                    <Smile size={20} />
+                    {currentMood > 0 ? (
+                        <span style={{ fontSize: '1.25rem', lineHeight: 1 }}>{moodEmojis[currentMood - 1]}</span>
+                    ) : (
+                        <Smile size={20} />
+                    )}
                 </IconButton>
             </Tooltip>
 
             <Tooltip title="Add Sticker">
-                <IconButton onClick={onStickerClick} size="small">
+                <IconButton onClick={onStickerClick} size="small" disabled={uploadingImages}>
                     <StickerIcon size={20} />
                 </IconButton>
             </Tooltip>
 
-            <Tooltip title={disableImages ? "Max 3 images" : "Add Photos"}>
+            <Tooltip title={uploadingImages ? "Uploading..." : (disableImages ? "Max 3 images" : "Add Photos")}>
                 <span>
-                    <IconButton onClick={onImageClick} size="small" disabled={disableImages}>
+                    <IconButton onClick={onImageClick} size="small" disabled={disableImages || uploadingImages}>
                         <ImageIcon size={20} />
                     </IconButton>
                 </span>

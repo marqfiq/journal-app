@@ -17,14 +17,15 @@ export function useAutosave<T>({ data, onSave, interval = 2000, saveOnUnmount = 
 
     const dataRef = useRef(data);
     const previousDataRef = useRef(data);
+    const onSaveRef = useRef(onSave);
+    
+    // Sync refs immediately during render to avoid stale closure issues in event handlers (e.g. clicking "Done")
+    dataRef.current = data;
+    onSaveRef.current = onSave;
+
     const isOnline = useRef(navigator.onLine);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
     const pendingSave = useRef(false);
-
-    // Keep refs up to date
-    useEffect(() => {
-        dataRef.current = data;
-    }, [data]);
 
     // Online/Offline listeners
     useEffect(() => {
@@ -82,10 +83,11 @@ export function useAutosave<T>({ data, onSave, interval = 2000, saveOnUnmount = 
         }
     }, [onSave]);
 
-    // Debounced Cloud Save Effect
+    // Core Debounced Cloud Save Effect
     useEffect(() => {
         // Skip if data hasn't changed, unless forced by retry
-        if (retryTrigger === 0 && JSON.stringify(data) === JSON.stringify(previousDataRef.current)) {
+        const dataChanged = JSON.stringify(data) !== JSON.stringify(previousDataRef.current);
+        if (retryTrigger === 0 && !dataChanged) {
             return;
         }
 
@@ -106,19 +108,25 @@ export function useAutosave<T>({ data, onSave, interval = 2000, saveOnUnmount = 
 
         return () => {
             if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        };
+    }, [data, interval, performSave, retryTrigger]);
 
-            // Save on unmount if pending
+    // Dedicated unmount save
+    useEffect(() => {
+        return () => {
             if (saveOnUnmount && pendingSave.current) {
-                // Fire and forget - cannot await in cleanup
-                onSave(dataRef.current).catch(e => console.error("Save on unmount failed", e));
+                // Fire and forget - using refs to ensure latest data and function
+                onSaveRef.current(dataRef.current).catch(e => 
+                    console.error("Final save on unmount failed", e)
+                );
             }
         };
-    }, [data, interval, performSave, retryTrigger, saveOnUnmount, onSave]);
+    }, [saveOnUnmount]); // onSave and data handled via refs
 
     const retry = () => setRetryTrigger(prev => prev + 1);
 
-    const saveNow = useCallback(async () => {
-        await performSave(dataRef.current);
+    const saveNow = useCallback(async (manualData?: T) => {
+        await performSave(manualData ?? dataRef.current);
     }, [performSave]);
 
     return { status, lastSaved, retry, saveNow };

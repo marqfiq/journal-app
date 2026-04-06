@@ -1,10 +1,11 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Box, Typography, IconButton, Grid, Paper, useTheme, Popover, Button } from '@mui/material';
+import { Box, Typography, IconButton, Grid, useTheme, Popover, Button, useMediaQuery } from '@mui/material';
 import { ChevronLeft, ChevronRight, Flower } from 'lucide-react';
 import { JournalEntry } from '../types';
 import { motion } from 'framer-motion';
 import { SYSTEM_STICKERS } from '../constants/stickers';
 import { useStickers } from '../hooks/useStickers';
+
 
 interface CalendarViewProps {
     entries: JournalEntry[];
@@ -16,9 +17,11 @@ const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export default function CalendarView({ entries, onDateSelect, initialDate }: CalendarViewProps) {
     const [currentDate, setCurrentDate] = useState(initialDate || new Date());
-    const { stickers } = useStickers();
+    const { stickers, loading: stickersLoading } = useStickers();
     const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
+    const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
 
     // Update calendar view when initialDate changes (e.g. navigation back)
     useEffect(() => {
@@ -171,7 +174,13 @@ export default function CalendarView({ entries, onDateSelect, initialDate }: Cal
                 </IconButton>
             </Box>
 
-            <Grid container spacing={0.5} sx={{ maxWidth: 'min(600px, calc((100vh - 450px) * 7 / 6))', mx: 'auto' }}>
+            <Grid container spacing={0.5} sx={{ 
+                // Constrain width by available height: 100vh - (Header + Padding + Month Nav + Bottom UI ~380px)
+                maxWidth: isMobile 
+                    ? 'min(100%, calc((100dvh - 380px) * 7 / 7))' 
+                    : 'min(600px, calc((100vh - 450px) * 7 / 6))', 
+                mx: 'auto' 
+            }}>
                 {DAYS.map(day => (
                     <Grid size={12 / 7} key={day} sx={{ textAlign: 'center', mb: 2 }}>
                         <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
@@ -240,29 +249,51 @@ export default function CalendarView({ entries, onDateSelect, initialDate }: Cal
                                     <Box sx={{
                                         width: '100%',
                                         aspectRatio: '1/1',
+                                        position: 'relative',
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         p: 0.25
                                     }}>
-                                        {sticker ? (
+                                        {/* Placeholder / Default Stamp */}
+                                        {hasEntry && (
+                                            <Box
+                                                className={(stickersLoading || (stickerEntry?.sticker_id && !loadedImages[stickerEntry.sticker_id])) ? 'animate-shimmer' : ''}
+                                                sx={{
+
+                                                    position: 'absolute',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    opacity: (sticker && loadedImages[sticker.id]) ? 0 : 0.6,
+                                                    transition: 'opacity 0.3s ease-in-out',
+                                                    zIndex: 0
+                                                }}
+                                            >
+                                                <Flower
+                                                    size={32}
+                                                    color={theme.palette.primary.main}
+                                                />
+                                            </Box>
+                                        )}
+
+                                        {/* Actual Sticker */}
+                                        {sticker && (
                                             <Box
                                                 component="img"
                                                 src={sticker.url}
+                                                onLoad={() => setLoadedImages(prev => ({ ...prev, [sticker.id]: true }))}
                                                 sx={{
                                                     width: '100%',
                                                     height: '100%',
                                                     objectFit: 'contain',
-                                                    filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.1))'
+                                                    filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.1))',
+                                                    opacity: loadedImages[sticker.id] ? 1 : 0,
+                                                    transition: 'opacity 0.3s ease-in-out',
+                                                    zIndex: 1
                                                 }}
                                             />
-                                        ) : hasEntry ? (
-                                            <Flower
-                                                size={32}
-                                                color={theme.palette.primary.main}
-                                                style={{ opacity: 0.6 }}
-                                            />
-                                        ) : null}
+                                        )}
                                     </Box>
                                 </Box>
                             </motion.div>

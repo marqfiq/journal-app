@@ -1,41 +1,44 @@
-import React, { useState } from 'react';
-import { Box, IconButton, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography, useTheme, useMediaQuery, Fab, Tooltip, alpha } from '@mui/material';
-import { Menu as MenuIcon, Book, Calendar, Search, Home, Plus, Settings, ChevronLeft, ChevronRight, X } from 'lucide-react';
-import AppIcon from './AppIcon';
-import { useNavigate, useLocation, useOutlet } from 'react-router-dom';
+import { useState } from 'react';
+import { Box, IconButton, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography, useTheme, useMediaQuery, Fab, Tooltip, alpha, Paper } from '@mui/material';
+import { Book, Calendar, Search, Home, Plus, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { APP_NAME } from '../constants/app';
-
+import AppIcon from './AppIcon';
 
 const DRAWER_WIDTH = 280;
 const COLLAPSED_DRAWER_WIDTH = 88;
+const BOTTOM_NAV_HEIGHT = 72;
 
 const MENU_ITEMS = [
     { text: 'Home', icon: Home, path: '/home' },
     { text: 'Journal', icon: Book, path: '/journal' },
     { text: 'Calendar', icon: Calendar, path: '/calendar' },
     { text: 'Search', icon: Search, path: '/search' },
+    { text: 'Settings', icon: Settings, path: '/settings' },
 ];
 
 export default function Layout() {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-    const [mobileOpen, setMobileOpen] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isHeaderHovered, setIsHeaderHovered] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
-    const element = useOutlet();
     const { userAccess } = useAuth();
-
-    const handleDrawerToggle = () => {
-        setMobileOpen(!mobileOpen);
-    };
 
     const handleCollapseToggle = () => {
         setIsCollapsed(!isCollapsed);
         setIsHeaderHovered(false);
+    };
+
+    const handleCreateEntry = () => {
+        if (userAccess?.accessLevel === 'expired') {
+            window.location.hash = 'pricing';
+        } else {
+            navigate('/journal/new');
+        }
     };
 
     // Desktop Sidebar Content
@@ -121,10 +124,7 @@ export default function Layout() {
                         <ListItem key={item.text} disablePadding sx={{ mb: 1, display: 'block' }}>
                             <Tooltip title={isCollapsed ? item.text : ''} placement="right">
                                 <ListItemButton
-                                    onClick={() => {
-                                        navigate(item.path);
-                                        if (isMobile) setMobileOpen(false);
-                                    }}
+                                    onClick={() => navigate(item.path)}
                                     sx={{
                                         minHeight: 48,
                                         justifyContent: isCollapsed ? 'center' : 'initial',
@@ -167,196 +167,39 @@ export default function Layout() {
                 })}
             </List>
 
-            {/* Settings Item */}
-            <Box sx={{ p: 2 }}>
-                <Tooltip title={isCollapsed ? "Settings" : ""} placement="right">
-                    <ListItemButton
-                        onClick={() => {
-                            navigate('/settings');
-                            if (isMobile) setMobileOpen(false);
-                        }}
-                        sx={{
-                            minHeight: 48,
-                            justifyContent: isCollapsed ? 'center' : 'initial',
-                            px: 2.5,
-                            borderRadius: 3,
-                            color: 'text.secondary'
-                        }}
-                    >
-                        <ListItemIcon
-                            sx={{
-                                minWidth: 0,
-                                mr: isCollapsed ? 0 : 2,
-                                justifyContent: 'center',
-                                color: 'text.secondary'
-                            }}
-                        >
-                            <Settings size={22} />
-                        </ListItemIcon>
-                        {!isCollapsed && <ListItemText primary="Settings" sx={{ opacity: isCollapsed ? 0 : 1 }} />}
-                    </ListItemButton>
-                </Tooltip>
-                <Fab
-                    color="primary"
-                    aria-label="add"
-                    sx={{
-                        position: 'absolute',
-                        bottom: 32,
-                        right: 32,
-                        boxShadow: `0px 4px 20px ${theme.palette.primary.main}66`,
-                        '&:hover': { transform: 'scale(1.05)' },
-                        transition: 'transform 0.2s',
-                        zIndex: 10
-                    }}
-                    onClick={() => {
-                        if (userAccess?.accessLevel === 'expired') {
-                            window.location.hash = 'pricing';
-                        } else {
-                            navigate('/journal/new');
-                        }
-                    }}
-                >
-                    <Plus color="white" />
-                </Fab>
-            </Box>
+            {/* Settings Item - Handled by MENU_ITEMS in mobile, but distinct in desktop sidebar */}
+            {!isMobile && (
+              <Box sx={{ p: 2 }}>
+                  <Fab
+                      color="primary"
+                      aria-label="add"
+                      sx={{
+                          position: 'absolute',
+                          bottom: 32,
+                          right: 32,
+                          boxShadow: `0px 4px 20px ${theme.palette.primary.main}66`,
+                          '&:hover': { transform: 'scale(1.05)' },
+                          transition: 'transform 0.2s',
+                          zIndex: 10
+                      }}
+                      onClick={handleCreateEntry}
+                  >
+                      <Plus color="white" />
+                  </Fab>
+              </Box>
+            )}
         </Box>
     );
 
     return (
         <Box sx={{
             display: 'flex',
-            height: '100vh',
+            height: '100dvh',
             bgcolor: 'background.default',
             overflow: 'hidden'
         }}>
-            {/* Mobile Header */}
-            {isMobile && (
-                <Box sx={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: 64,
-                    bgcolor: 'background.paper',
-                    zIndex: 1100,
-                    display: 'flex',
-                    alignItems: 'center',
-                    px: 2,
-                    boxShadow: '0px 1px 10px rgba(0,0,0,0.05)'
-                }}>
-                    <IconButton onClick={handleDrawerToggle} edge="start" sx={{ color: 'text.primary' }}>
-                        <MenuIcon />
-                    </IconButton>
-                    <Typography variant="h6" sx={{ ml: 2, fontWeight: 700 }}>
-                        {APP_NAME}
-                    </Typography>
-                </Box>
-            )}
-
-            {/* Mobile Drawer */}
-            {isMobile ? (
-                <Drawer
-                    variant="temporary"
-                    anchor="top"
-                    open={mobileOpen}
-                    onClose={handleDrawerToggle}
-                    ModalProps={{ keepMounted: true }}
-                    sx={{
-                        '& .MuiDrawer-paper': {
-                            boxSizing: 'border-box',
-                            width: '100%',
-                            height: 'auto',
-                            maxHeight: '80vh',
-                            borderBottomLeftRadius: 24,
-                            borderBottomRightRadius: 24,
-                            bgcolor: 'background.paper',
-                            boxShadow: '0px 4px 20px rgba(0,0,0,0.1)'
-                        },
-                    }}
-                >
-                    <Box sx={{ p: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                        {/* Mobile Header with Close Button */}
-                        <Box sx={{ width: '100%', display: 'flex', justifyContent: 'flex-end', mb: 0 }}>
-                            <IconButton onClick={handleDrawerToggle} sx={{ color: 'text.secondary' }}>
-                                <X size={24} />
-                            </IconButton>
-                        </Box>
-
-                        {/* Navigation Items */}
-                        <List sx={{ width: '100%', px: 2 }}>
-                            {MENU_ITEMS.map((item) => {
-                                const Icon = item.icon;
-                                const isActive = location.pathname === item.path;
-                                return (
-                                    <ListItem key={item.text} disablePadding sx={{ mb: 1, display: 'block' }}>
-                                        <ListItemButton
-                                            onClick={() => {
-                                                navigate(item.path);
-                                                setMobileOpen(false);
-                                            }}
-                                            sx={{
-                                                minHeight: 48,
-                                                justifyContent: 'center',
-                                                px: 2.5,
-                                                borderRadius: 3,
-                                                bgcolor: isActive ? alpha(theme.palette.primary.main, 0.15) : 'transparent',
-                                                color: isActive ? 'primary.main' : 'text.primary',
-                                                position: 'relative'
-                                            }}
-                                        >
-                                            <ListItemIcon sx={{
-                                                minWidth: 0,
-                                                color: isActive ? 'primary.main' : 'text.secondary',
-                                                position: 'absolute',
-                                                left: 16
-                                            }}>
-                                                <Icon size={22} />
-                                            </ListItemIcon>
-                                            <ListItemText
-                                                primary={item.text}
-                                                primaryTypographyProps={{ fontWeight: isActive ? 600 : 400, textAlign: 'center' }}
-                                            />
-                                        </ListItemButton>
-                                    </ListItem>
-                                );
-                            })}
-
-                            {/* Settings Item (Inline for Mobile) */}
-                            <ListItem disablePadding sx={{ mb: 1, display: 'block' }}>
-                                <ListItemButton
-                                    onClick={() => {
-                                        navigate('/settings');
-                                        setMobileOpen(false);
-                                    }}
-                                    sx={{
-                                        minHeight: 48,
-                                        justifyContent: 'center',
-                                        px: 2.5,
-                                        borderRadius: 3,
-                                        color: 'text.primary',
-                                        position: 'relative'
-                                    }}
-                                >
-                                    <ListItemIcon sx={{
-                                        minWidth: 0,
-                                        color: 'text.secondary',
-                                        position: 'absolute',
-                                        left: 16
-                                    }}>
-                                        <Settings size={22} />
-                                    </ListItemIcon>
-                                    <ListItemText primary="Settings" primaryTypographyProps={{ textAlign: 'center' }} />
-                                </ListItemButton>
-                            </ListItem>
-                        </List>
-
-                        <Box sx={{ mb: 2, mt: 1 }}>
-                            <AppIcon size={32} />
-                        </Box>
-                    </Box>
-                </Drawer>
-            ) : (
-                /* Desktop Sidebar (Static) */
+            {/* Desktop Sidebar (Static) */}
+            {!isMobile && (
                 <motion.div
                     animate={{ width: isCollapsed ? COLLAPSED_DRAWER_WIDTH : DRAWER_WIDTH }}
                     transition={{ duration: 0.3, ease: 'easeInOut' }}
@@ -376,12 +219,13 @@ export default function Layout() {
                 component="main"
                 sx={{
                     flexGrow: 1,
-                    height: '100vh',
+                    height: '100dvh',
                     overflow: 'hidden',
                     position: 'relative',
                     display: 'flex',
                     flexDirection: 'column',
-                    p: isMobile ? 0 : 2
+                    p: isMobile ? 0 : 2,
+                    pb: isMobile ? `${BOTTOM_NAV_HEIGHT}px` : (isMobile ? 0 : 2)
                 }}
             >
                 <Box sx={{
@@ -394,28 +238,113 @@ export default function Layout() {
                     overflow: 'hidden',
                     position: 'relative'
                 }}>
-                    <Box sx={{
-                        flexGrow: 1,
-                        overflow: 'hidden',
-                        height: '100%',
-                        width: '100%',
-                        position: 'relative'
-                    }}>
-                        <AnimatePresence mode="wait">
-                            <motion.div
-                                key={location.pathname.startsWith('/journal/') ? 'journal-entry' : location.pathname}
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -10 }}
-                                transition={{ duration: 0.3 }}
-                                style={{ width: '100%', height: '100%' }}
-                            >
-                                {element}
-                            </motion.div>
-                        </AnimatePresence>
+                    <Box 
+                        sx={{
+                            flexGrow: 1,
+                            overflow: 'hidden',
+                            height: '100%',
+                            width: '100%',
+                            position: 'relative'
+                        }}
+                    >
+                        <Outlet />
                     </Box>
                 </Box>
             </Box>
+
+            {/* Mobile Bottom Navigation */}
+            {isMobile && (
+                <Paper
+                    elevation={3}
+                    sx={{
+                        position: 'fixed',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        height: BOTTOM_NAV_HEIGHT,
+                        bgcolor: 'background.paper',
+                        zIndex: 1100,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-around',
+                        borderTop: 1,
+                        borderColor: 'divider',
+                        px: 1
+                    }}
+                >
+                    {/* Home */}
+                    <IconButton
+                        onClick={() => navigate('/home')}
+                        sx={{
+                            flexDirection: 'column',
+                            color: location.pathname === '/home' ? 'primary.main' : 'text.secondary',
+                            borderRadius: 2,
+                            p: 1
+                        }}
+                    >
+                        <Home size={24} />
+                        <Typography variant="caption" sx={{ fontSize: '10px', mt: 0.5 }}>Home</Typography>
+                    </IconButton>
+
+                    {/* Journal */}
+                    <IconButton
+                        onClick={() => navigate('/journal')}
+                        sx={{
+                            flexDirection: 'column',
+                            color: (location.pathname === '/journal' || location.pathname.startsWith('/journal/')) && location.pathname !== '/journal/new' ? 'primary.main' : 'text.secondary',
+                            borderRadius: 2,
+                            p: 1
+                        }}
+                    >
+                        <Book size={24} />
+                        <Typography variant="caption" sx={{ fontSize: '10px', mt: 0.5 }}>Journal</Typography>
+                    </IconButton>
+
+                    {/* Add (Center) */}
+                    <Box sx={{ position: 'relative', top: -16 }}>
+                        <Fab
+                            color="primary"
+                            onClick={handleCreateEntry}
+                            sx={{
+                                width: 56,
+                                height: 56,
+                                boxShadow: `0px 4px 15px ${theme.palette.primary.main}66`
+                            }}
+                        >
+                            <Plus color="white" />
+                        </Fab>
+                    </Box>
+
+
+                    {/* Calendar */}
+                    <IconButton
+                        onClick={() => navigate('/calendar')}
+                        sx={{
+                            flexDirection: 'column',
+                            color: location.pathname === '/calendar' ? 'primary.main' : 'text.secondary',
+                            borderRadius: 2,
+                            p: 1
+                        }}
+                    >
+                        <Calendar size={24} />
+                        <Typography variant="caption" sx={{ fontSize: '10px', mt: 0.5 }}>Calendar</Typography>
+                    </IconButton>
+
+                    {/* Settings */}
+                    <IconButton
+                        onClick={() => navigate('/settings')}
+                        sx={{
+                            flexDirection: 'column',
+                            color: location.pathname === '/settings' ? 'primary.main' : 'text.secondary',
+                            borderRadius: 2,
+                            p: 1
+                        }}
+                    >
+                        <Settings size={22} />
+                        <Typography variant="caption" sx={{ fontSize: '10px', mt: 0.5 }}>Settings</Typography>
+                    </IconButton>
+                </Paper>
+            )}
         </Box>
     );
 }
