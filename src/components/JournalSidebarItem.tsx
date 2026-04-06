@@ -21,11 +21,10 @@ export default function JournalSidebarItem({ entry, isSelected, onClick, classNa
         });
     };
 
-    const truncateText = (html: string, maxLength: number = 60) => {
+    const stripHtml = (html: string) => {
         const tmp = document.createElement('DIV');
         tmp.innerHTML = html;
-        const text = tmp.textContent || tmp.innerText || "";
-        return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+        return tmp.textContent || tmp.innerText || "";
     };
 
     const theme = useTheme();
@@ -41,8 +40,8 @@ export default function JournalSidebarItem({ entry, isSelected, onClick, classNa
                 onClick={onClick}
                 className={className}
                 sx={{
-                    p: 2,
-                    mb: 2,
+                    p: isMobile ? 1.5 : 2,
+                    mb: isMobile ? 1 : 2,
                     cursor: 'pointer',
                     borderRadius: 3,
                     bgcolor: isSelected ? 'primary.main' : (className ? 'transparent' : 'background.paper'),
@@ -99,7 +98,7 @@ export default function JournalSidebarItem({ entry, isSelected, onClick, classNa
                     opacity: isSelected ? 0.9 : 0.7,
                     mt: 0.5
                 }}>
-                    {truncateText(entry.text)}
+                    {stripHtml(entry.text)}
                 </Typography>
             </Paper>
         </motion.div>

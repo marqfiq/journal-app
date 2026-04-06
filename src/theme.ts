@@ -71,19 +71,63 @@ export const getTheme = (mode: ThemeMode, accentColor: AccentColor, fontSize: Fo
       fontSize: 14 * fontSizeMultiplier,
       h1: {
         fontFamily: 'var(--font-serif)',
-        fontWeight: 200,
+        fontWeight: 300,
+        fontSize: '2.5rem',
+        '@media (min-width:600px)': {
+          fontSize: '3.5rem',
+        },
+        '@media (min-width:900px)': {
+          fontSize: '4.5rem',
+        },
       },
       h2: {
         fontFamily: 'var(--font-serif)',
-        fontWeight: 200,
+        fontWeight: 300,
+        fontSize: '2rem',
+        '@media (min-width:600px)': {
+          fontSize: '2.5rem',
+        },
+        '@media (min-width:900px)': {
+          fontSize: '3.5rem',
+        },
       },
       h3: {
         fontFamily: 'var(--font-serif)',
-        fontWeight: 200,
+        fontWeight: 300,
+        fontSize: '1.75rem',
+        '@media (min-width:600px)': {
+          fontSize: '2rem',
+        },
+        '@media (min-width:900px)': {
+          fontSize: '2.75rem',
+        },
       },
       h4: {
         fontFamily: 'var(--font-serif)',
-        fontWeight: 200,
+        fontWeight: 400,
+        fontSize: '1.5rem',
+        '@media (min-width:600px)': {
+          fontSize: '1.75rem',
+        },
+        '@media (min-width:900px)': {
+          fontSize: '2.25rem',
+        },
+      },
+      h5: {
+        fontFamily: 'var(--font-sans)',
+        fontWeight: 600,
+        fontSize: '1.1rem',
+        '@media (min-width:600px)': {
+          fontSize: '1.25rem',
+        },
+      },
+      h6: {
+        fontFamily: 'var(--font-sans)',
+        fontWeight: 600,
+        fontSize: '1rem',
+        '@media (min-width:600px)': {
+          fontSize: '1.1rem',
+        },
       },
       button: {
         textTransform: 'none',

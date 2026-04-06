@@ -132,8 +132,7 @@ export default function PricingModal() {
                                 WebkitBackgroundClip: 'text',
                                 WebkitTextFillColor: 'transparent',
                                 filter: 'drop-shadow(0px 2px 10px rgba(0,0,0,0.1))',
-                                mb: 1,
-                                fontSize: { xs: '2.5rem', md: '3rem' }
+                                mb: 1
                             }}>
                                 Upgrade to Pro
                             </Typography>

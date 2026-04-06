@@ -1,18 +1,22 @@
 import { useState, useEffect, useRef } from 'react';
-import { Box, Typography, TextField, InputAdornment, Grid, Card, CardContent, useTheme, alpha } from '@mui/material';
-import { Search as SearchIcon, Sticker, Image as ImageIcon } from 'lucide-react';
+import { Box, Typography, TextField, InputAdornment, useTheme, alpha } from '@mui/material';
+import { Search as SearchIcon } from 'lucide-react';
 import { JournalEntry } from '../types';
 import { JournalService } from '../services/journal';
-import { useAuth } from '../context/AuthContext';
+import { useJournal } from '../context/JournalContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import JournalSidebarItem from '../components/JournalSidebarItem';
 
 export default function Search() {
     const [query, setQuery] = useState('');
-    const [entries, setEntries] = useState<JournalEntry[]>([]);
+    const { entries } = useJournal();
     const [results, setResults] = useState<JournalEntry[]>([]);
     const [scrollRatio, setScrollRatio] = useState(0);
-    const { user } = useAuth();
+
+    useEffect(() => {
+        console.log('Search page mounted');
+    }, []);
     const navigate = useNavigate();
     const location = useLocation();
     const theme = useTheme();
@@ -46,23 +50,15 @@ export default function Search() {
     };
 
     useEffect(() => {
-        // Cast to unknown first to handle potential mixed state properties (like isEditing)
+        // Restore query from navigation context
         const state = location.state as any;
-        // Check for both direct query or nested context (fallback)
         const queryToRestore = state?.query || state?.context?.query;
         if (queryToRestore) {
+            console.log('Restoring search query:', queryToRestore);
             setQuery(queryToRestore);
         }
     }, [location.state]);
 
-    useEffect(() => {
-        async function loadEntries() {
-            if (!user) return;
-            const data = await JournalService.getEntries(user.uid);
-            setEntries(data);
-        }
-        loadEntries();
-    }, [user]);
 
     useEffect(() => {
         if (query.trim()) {
@@ -73,12 +69,6 @@ export default function Search() {
         }
     }, [query, entries]);
 
-    const truncateText = (html: string, maxLength: number = 150) => {
-        const tmp = document.createElement('DIV');
-        tmp.innerHTML = html;
-        const text = tmp.textContent || tmp.innerText || "";
-        return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
-    };
 
     // Derived styles based on scrollRatio
 
@@ -167,108 +157,35 @@ export default function Search() {
                         </Typography>
                     )}
 
-                    <Grid container spacing={3}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                         {results.map((entry, index) => (
-                            <Grid size={{ xs: 12 }} key={entry.id} sx={{ width: '100%' }}>
-                                <motion.div
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: index * 0.05 }}
-                                    style={{ width: '100%' }}
-                                >
-                                    <Card
-                                        sx={{
-                                            width: '100%',
-                                            cursor: 'pointer',
-                                            borderRadius: 3,
-                                            transition: 'transform 0.2s, box-shadow 0.2s',
-                                            mb: 1,
-                                            border: 'none',
-                                            boxShadow: (theme) => theme.palette.mode === 'light' ? '0px 4px 20px rgba(0,0,0,0.02)' : '0px 4px 20px rgba(0,0,0,0.2)', // Subtle shadow like Sidebar
-                                            height: 120, // Fixed height for uniformity
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            '&:hover': {
-                                                transform: 'scale(1.01)', // Slight scale like Sidebar
-                                                bgcolor: 'action.hover'
-                                            }
-                                        }}
-                                        onClick={() => navigate(`/journal/${entry.id}`, {
-                                            state: {
-                                                from: '/search',
-                                                label: 'Search',
-                                                context: { query: query }
-                                            }
-                                        })}
-                                    >
-                                        <CardContent sx={{
-                                            p: 2,
-                                            height: '100%',
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            justifyContent: 'space-between' // Distribute space
-                                        }}>
-                                            {/* Header: Date Left, Icons Right */}
-                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                                                <Typography variant="body2" sx={{ fontWeight: 600, opacity: 0.8 }}>
-                                                    {new Date(entry.date).toLocaleDateString('en-US', {
-                                                        month: 'short',
-                                                        day: 'numeric',
-                                                        year: 'numeric'
-                                                    })}
-                                                </Typography>
-
-                                                {/* Icons: Mood, Sticker, Images */}
-                                                <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', opacity: 0.6 }}>
-                                                    {/* Monochrome Mood Emoji */}
-                                                    {(entry.mood || 0) > 0 && (
-                                                        <Typography sx={{
-                                                            fontSize: '1rem',
-                                                            lineHeight: 1,
-                                                            filter: 'grayscale(100%)',
-                                                            opacity: 0.8
-                                                        }}>
-                                                            {['😢', '😕', '😐', '🙂', '😄'][(entry.mood!) - 1]}
-                                                        </Typography>
-                                                    )}
-
-                                                    {/* Sticker Icon */}
-                                                    {entry.sticker_id && (
-                                                        <Sticker size={14} />
-                                                    )}
-
-                                                    {/* Image Icon + Count */}
-                                                    {(entry.image_urls && entry.image_urls.length > 0) && (
-                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                            <ImageIcon size={14} />
-                                                            <Typography variant="caption" sx={{ fontWeight: 600, lineHeight: 1 }}>
-                                                                {entry.image_urls.length}
-                                                            </Typography>
-                                                        </Box>
-                                                    )}
-                                                </Box>
-                                            </Box>
-
-                                            {/* Content Preview */}
-                                            <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
-                                                <Typography variant="body2" sx={{
-                                                    display: '-webkit-box',
-                                                    overflow: 'hidden',
-                                                    WebkitBoxOrient: 'vertical',
-                                                    WebkitLineClamp: 2,
-                                                    lineHeight: 1.4,
-                                                    opacity: 0.7,
-                                                    width: '100%'
-                                                }}>
-                                                    {truncateText(entry.text)}
-                                                </Typography>
-                                            </Box>
-                                        </CardContent>
-                                    </Card>
-                                </motion.div>
-                            </Grid>
+                            <motion.div
+                                key={entry.id}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.05 }}
+                                style={{ width: '100%' }}
+                            >
+                                <JournalSidebarItem
+                                    entry={entry}
+                                    isSelected={false}
+                                    onClick={() => navigate(`/journal/${entry.id}`, {
+                                        state: {
+                                            from: '/search',
+                                            label: 'Search',
+                                            context: { query: query }
+                                        }
+                                    })}
+                                    sx={{
+                                        boxShadow: (theme: any) => theme.palette.mode === 'light' 
+                                            ? '0px 4px 20px rgba(0,0,0,0.02)' 
+                                            : '0px 4px 20px rgba(0,0,0,0.2)',
+                                        mb: 0 // Remove bottom margin since Box uses gap
+                                    }}
+                                />
+                            </motion.div>
                         ))}
-                    </Grid>
+                    </Box>
 
                     {query && results.length === 0 && (
                         <Typography align="center" color="text.secondary" sx={{ mt: 4 }}>

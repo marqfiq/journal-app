@@ -193,9 +193,6 @@ export default function Home() {
               </Box>
               <Typography variant="h6">Calendar</Typography>
             </Box>
-            <Typography variant="body2" color="text.secondary">
-              View your journey over time
-            </Typography>
           </Paper>
         </Grid>
       </Grid>

@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Box, Button, Typography, IconButton, Paper, Stack, Tooltip, CircularProgress, useTheme } from '@mui/material';
+import { Box, Button, IconButton, Paper, Stack, Tooltip, useTheme, useMediaQuery, alpha } from '@mui/material';
 import { ArrowLeft, Trash2, Check, AlertCircle, Pencil } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { JournalService } from '../services/journal';
 import EntryEditor from '../components/EntryEditor';
 import DeleteDialog from '../components/DeleteDialog';
-import { JournalEntry, BackLocationState } from '../types';
+import { JournalEntry } from '../types';
 import { motion } from 'framer-motion';
 import { useAutosave } from '../hooks/useAutosave';
 import { SYSTEM_STICKERS } from '../constants/stickers';
@@ -18,6 +18,8 @@ import EntryHeader from '../components/EntryHeader';
 import EntryAttachments from '../components/EntryAttachments';
 import { startTrialForUser } from '../services/userService';
 import TrialConfirmationModal from '../components/TrialConfirmationModal';
+import { useJournal } from '../context/JournalContext';
+import MemoryLoading from '../components/MemoryLoading';
 
 export default function Entry() {
   const { id } = useParams<{ id: string }>();
@@ -34,12 +36,16 @@ export default function Entry() {
   const locationState = location.state as LocationState | null;
 
   const { user, userAccess } = useAuth();
+  const { entries, addEntry, updateEntry, deleteEntry, loading: journalLoading } = useJournal();
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isNew = id === 'new';
+  const [isSavingAndClosing, setIsSavingAndClosing] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(() => {
     if (isNew) return true;
-    return locationState?.isEditing || false;
+    // Explicitly check for isEditing in location state, otherwise default to false (view mode)
+    return locationState?.isEditing === true;
   });
 
   // Redirect if trying to create new entry while expired
@@ -54,7 +60,7 @@ export default function Entry() {
   }, [isNew, userAccess, navigate]);
 
   // Sticker Hook
-  const { stickers, loading: stickersLoading, addSticker, removeSticker, reorderStickers, canManage } = useStickers();
+  const { stickers, addSticker, removeSticker, reorderStickers, canManage } = useStickers();
 
   // Dialog State
   const [uploading, setUploading] = useState(false);
@@ -94,17 +100,22 @@ export default function Entry() {
   });
 
   const [loading, setLoading] = useState(() => {
-    if (location.state?.entry) return false;
-    return true; // Always start loading to prevent flicker
+    if (location.state?.entry || isNew) return false;
+    return true; 
   });
+  const textRef = useRef(entry.text || '');
 
-  // Load entry data
+  // Keep textRef synced with entry.text (for initial loads)
+  useEffect(() => {
+    if (entry.text !== undefined) textRef.current = entry.text;
+  }, [entry.text]);
+
   useEffect(() => {
     const loadData = async () => {
       if (!user) return;
 
-      if (location.state?.entry) {
-        setEntry(location.state.entry);
+      if (locationState?.entry) {
+        setEntry(locationState.entry);
         setLoading(false);
         return;
       }
@@ -132,28 +143,44 @@ export default function Entry() {
         return;
       }
 
-      if (id) {
-        try {
-          const entries = await JournalService.getEntries(user.uid);
-          const found = entries.find(e => e.id === id);
+      if (id && !journalLoading) {
+        const found = entries.find(e => e.id === id);
 
-          if (found) {
-            setEntry(found);
-            if (!location.state?.isEditing) {
-              setIsEditing(false);
+        if (found) {
+          // PROTECTION: 
+          // 1. If we are currently NEW, and just got an ID, or just navigated, we skip overwrite.
+          // 2. If we are already editing this exact entry, we skip unless we have no data yet.
+          const isFreshHandover = (locationState?.entry || isNew) && entry.id === id;
+          const isCurrentlyEditing = isEditing && entry.id === id && entry.text;
+
+          if (isFreshHandover || isCurrentlyEditing) {
+            console.log('Skipping cache update to preserve latest user text.');
+            setLoading(false);
+            return;
+          }
+
+          setEntry(found);
+          setLoading(false);
+        } else {
+          // If not in cache, fallback to direct fetch or navigate back
+          try {
+            const data = await JournalService.getEntries(user.uid);
+            const entryDoc = data.find((e: JournalEntry) => e.id === id);
+            if (entryDoc) {
+              setEntry(entryDoc);
+              setLoading(false);
+            } else {
+              navigate('/journal');
             }
-          } else {
+          } catch (error) {
+            console.error("Error loading entry", error);
             navigate('/journal');
           }
-        } catch (error) {
-          console.error("Error loading entry", error);
-        } finally {
-          setLoading(false);
         }
       }
     };
     loadData();
-  }, [id, isNew, user, location.state, userAccess]);
+  }, [id, isNew, user, locationState, userAccess, journalLoading, entries, navigate]);
 
   // Autosave Handler
   const creationPromise = useRef<Promise<any> | null>(null);
@@ -176,30 +203,48 @@ export default function Entry() {
 
     if (isNew) {
       if (creationPromise.current) {
-        const createdEntry = await creationPromise.current;
-        await JournalService.updateEntry(createdEntry.id, currentEntry);
+        const createdId = await creationPromise.current;
+        await updateEntry(createdId, currentEntry);
         return;
       }
 
-      creationPromise.current = JournalService.createEntry(user.uid, currentEntry);
+      creationPromise.current = addEntry({
+        ...currentEntry,
+        userId: user.uid,
+        text: currentEntry.text || '',
+        date: currentEntry.date || Date.now(),
+        dayKey: currentEntry.dayKey || new Date(currentEntry.date || Date.now()).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit' }).replace('/', '-'),
+        mood: currentEntry.mood || 0,
+        tags: currentEntry.tags || []
+      } as JournalEntry);
       try {
-        const newEntry = await creationPromise.current;
-        setEntry(prev => ({ ...prev, id: newEntry.id }));
+        const newId = await creationPromise.current;
+        // Update local state WITH the new ID, but use functional update to be safe
+        setEntry(prev => ({ ...prev, id: newId }));
       } catch (error) {
         console.error("Failed to create entry", error);
         creationPromise.current = null;
       }
     } else if (id) {
-      await JournalService.updateEntry(id, currentEntry);
+      await updateEntry(id, currentEntry);
     }
   }, [user, isNew, id]);
 
   useEffect(() => {
-    if (isNew && entry.id) {
+    // Only navigate if we have a valid string ID to prevent [object Object] errors
+    if (isNew && entry.id && typeof entry.id === 'string') {
+      console.log('New entry created, redirecting to ID:', entry.id);
       localStorage.removeItem('entry-new');
-      navigate(`/journal/${entry.id}`, { replace: true, state: { entry } });
+      navigate(`/journal/${entry.id}`, { 
+        replace: true, 
+        state: { 
+          ...location.state, 
+          entry, 
+          isEditing: !isSavingAndClosing // Respect if user clicked "Done"
+        } 
+      });
     }
-  }, [isNew, entry.id, navigate, entry]);
+  }, [isNew, entry.id, navigate, entry, location.state]);
 
   const { status, retry, saveNow } = useAutosave({
     data: entry,
@@ -211,7 +256,7 @@ export default function Entry() {
   const handleDelete = async () => {
     if (!id) return;
     try {
-      await JournalService.deleteEntry(id);
+      await deleteEntry(id);
       localStorage.removeItem(`entry-${id}`);
       navigate('/journal');
     } catch (error) {
@@ -220,7 +265,10 @@ export default function Entry() {
   };
 
   const handleDone = async () => {
-    await saveNow();
+    setIsSavingAndClosing(true);
+    // Construct the ABSOLUTE latest entry using a synchronous ref
+    const latestEntry = { ...entry, text: textRef.current };
+    await saveNow(latestEntry);
 
     // Check for trial start eligibility
     if (user) {
@@ -310,18 +358,9 @@ export default function Entry() {
   };
 
   // Back Button Logic
-  // Back Button Logic
   const handleBack = () => {
-    // Cast to unknown first to handle potential mixed state properties (like isEditing)
-    const state = location.state as unknown as BackLocationState;
-
-    if (state?.from) {
-      console.log('Navigating back to:', state.from, 'with context:', state.context);
-      navigate(state.from, { state: state.context });
-    } else {
-      console.log('No back state found, defaulting to /journal');
-      navigate('/journal');
-    }
+    console.log('Using back navigation');
+    navigate(-1);
   };
 
   // Sticker Logic for display
@@ -358,17 +397,13 @@ export default function Entry() {
     return null;
   }
 
-  if (loading) return (
-    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-      <CircularProgress />
-    </Box>
-  );
+  if (loading || journalLoading) return <MemoryLoading />;
 
   return (
     <Box sx={{
       height: '100%',
       overflowY: 'auto',
-      pb: 10,
+      pb: isEditing && isMobile ? 12 : 10,
       '&::-webkit-scrollbar-track': { my: 2 }
     }}>
       <motion.div
@@ -376,7 +411,12 @@ export default function Entry() {
         variants={containerVariants}
         initial="hidden"
         animate="show"
-        style={{ maxWidth: 800, margin: '0 auto', padding: '24px' }}
+        style={{ 
+          maxWidth: 800, 
+          margin: '0 auto', 
+          padding: isMobile ? '12px' : '24px',
+          paddingBottom: isMobile ? '80px' : '24px'
+        }}
       >
         {/* Toolbar */}
         <motion.div variants={itemVariants}>
@@ -393,17 +433,17 @@ export default function Entry() {
             <Stack direction="row" spacing={2} alignItems="center">
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 40, justifyContent: 'flex-end' }}>
                 {(isEditing || isNew) && (status === 'unsaved' || status === 'saving' || status === 'offline') && (
-                  <Tooltip title={status === 'offline' ? "Offline" : "Saving..."}>
+                  <Tooltip title={status === 'offline' ? "Offline" : "Saving..."} enterTouchDelay={0} leaveTouchDelay={2000}>
                     <Check size={20} color="#9e9e9e" />
                   </Tooltip>
                 )}
                 {(isEditing || isNew) && (status === 'saved' || status === 'idle') && (
-                  <Tooltip title="Saved">
+                  <Tooltip title="Saved" enterTouchDelay={0} leaveTouchDelay={2000}>
                     <Check size={20} color={theme.palette.primary.main} strokeWidth={2.5} />
                   </Tooltip>
                 )}
                 {(isEditing || isNew) && status === 'error' && (
-                  <Tooltip title="Failed to save. Click to retry.">
+                  <Tooltip title="Failed to save. Click to retry." enterTouchDelay={0} leaveTouchDelay={2000}>
                     <IconButton size="small" onClick={retry} sx={{ p: 0.5 }}>
                       <AlertCircle size={20} color="#d32f2f" />
                     </IconButton>
@@ -420,6 +460,7 @@ export default function Entry() {
                       if (userAccess?.accessLevel === 'expired') {
                         window.location.hash = 'pricing';
                       } else {
+                        setIsSavingAndClosing(false); // Reset save flag if re-editing
                         setIsEditing(true);
                       }
                     }}
@@ -430,7 +471,7 @@ export default function Entry() {
                       height: isEditing ? 'auto' : 40,
                       px: isEditing ? 2 : 0,
                       minHeight: 0,
-                      display: 'flex',
+                      display: (isMobile && isEditing) ? 'none' : 'flex',
                       alignItems: 'center',
                       justifyContent: 'center'
                     }}
@@ -460,9 +501,19 @@ export default function Entry() {
 
         {/* Main Card */}
         <motion.div variants={itemVariants}>
-          <Paper elevation={0} sx={{ borderRadius: 4, mb: 3, border: 1, borderColor: 'divider', overflow: 'hidden' }}>
+          <Paper 
+            elevation={0} 
+            sx={{ 
+              borderRadius: isMobile ? 3 : 4, 
+              mb: 3, 
+              border: isMobile ? 'none' : 1, 
+              borderColor: 'divider', 
+              overflow: 'hidden',
+              bgcolor: isMobile ? 'transparent' : 'background.paper'
+            }}
+          >
 
-            <Box sx={{ p: 4, pb: 2 }}>
+            <Box sx={{ p: { xs: 1.5, sm: 4 }, pb: 2 }}>
               <motion.div variants={itemVariants}>
                 <EntryHeader
                   entry={entry}
@@ -502,6 +553,7 @@ export default function Entry() {
                   }}
                   onTimeClose={() => setTimeOpen(false)}
                   onStickerReorder={reorderStickers}
+                  uploadingImages={uploading}
                 />
               </motion.div>
 
@@ -514,15 +566,19 @@ export default function Entry() {
                     setLightboxIndex(index);
                     setLightboxOpen(true);
                   }}
+                  uploading={uploading}
                 />
               </motion.div>
             </Box>
 
-            <Box sx={{ px: 4, pb: 4, position: 'relative', zIndex: 1 }}>
+            <Box sx={{ px: { xs: 1.5, sm: 4 }, pb: 4, position: 'relative', zIndex: 1 }}>
               <motion.div variants={itemVariants}>
                 <EntryEditor
                   initialContent={entry.text}
-                  onUpdate={(content) => setEntry(prev => ({ ...prev, text: content }))}
+                  onUpdate={(content) => {
+                    textRef.current = content; // Sync Ref instantly!
+                    setEntry(prev => ({ ...prev, text: content }));
+                  }}
                   editable={isEditing}
                 />
               </motion.div>
@@ -530,6 +586,44 @@ export default function Entry() {
           </Paper>
         </motion.div>
       </motion.div>
+
+      {/* Mobile Sticky Bottom Bar for Done button */}
+      {isMobile && isEditing && (
+        <Paper
+          elevation={10}
+          sx={{
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            p: 2,
+            bgcolor: 'background.paper',
+            borderTop: 1,
+            borderColor: 'divider',
+            zIndex: 1200,
+            display: 'flex',
+            justifyContent: 'center'
+          }}
+        >
+          <Button
+            variant="contained"
+            fullWidth
+            size="large"
+            onClick={handleDone}
+            startIcon={<Check size={20} />}
+            sx={{
+              borderRadius: 3,
+              fontWeight: 700,
+              py: 1.5,
+              textTransform: 'none',
+              fontSize: '1.1rem',
+              boxShadow: `0 4px 14px ${alpha(theme.palette.primary.main, 0.4)}`
+            }}
+          >
+            Save Entry
+          </Button>
+        </Paper>
+      )}
 
       {/* DIALOGS */}
       <DeleteDialog

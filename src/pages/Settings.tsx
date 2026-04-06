@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Box, Typography, Button, Paper, Divider, Switch, Slider, Grid, Chip, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Stack } from '@mui/material';
+import { useState, useEffect } from 'react';
+import { Box, Typography, Button, Paper, Divider, Switch, Slider, Grid, Chip, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Stack, useTheme, alpha } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
 import { useThemeSettings } from '../context/ThemeContext';
 import { ACCENT_COLORS, HEADER_FONTS, BODY_FONTS } from '../theme';
@@ -10,6 +10,7 @@ import { scheduleAccountDeletion } from '../services/userService';
 import SubscriptionSuccessModal from '../components/SubscriptionSuccessModal';
 
 export default function Settings() {
+  const theme = useTheme();
   const { user, userAccess, logout } = useAuth();
   const { mode, setMode, accentColor, setAccentColor, fontSize, setFontSize, headerFont, setHeaderFont, bodyFont, setBodyFont } = useThemeSettings();
   const [loadingPortal, setLoadingPortal] = useState(false);
@@ -57,7 +58,7 @@ export default function Settings() {
   };
 
   // Sync subscription on load to ensure cancellation status is up to date
-  React.useEffect(() => {
+  useEffect(() => {
     if (userAccess?.subscriptionStatus === 'active') { // Only try to sync if we think we are active
       import('../services/subscription').then(m => {
         m.SubscriptionService.syncSubscription().catch(err => console.error("Auto-sync failed", err));
@@ -66,7 +67,7 @@ export default function Settings() {
   }, [userAccess?.subscriptionStatus]);
 
   // Check for session_id in URL (Return from Stripe)
-  React.useEffect(() => {
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const sessionId = params.get('session_id');
     const success = params.get('success');
@@ -221,56 +222,71 @@ export default function Settings() {
 
             {/* Font Style */}
             <Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Font Style</Typography>
-              </Box>
-
-              <Grid container spacing={3}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 3 }}>Typography</Typography>
+              
+              <Grid container spacing={4}>
+                {/* Header Font */}
                 <Grid size={{ xs: 12, sm: 6 }}>
-                  <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>Header Font</Typography>
-                  <Box
-                    component="select"
-                    value={headerFont}
-                    onChange={(e) => setHeaderFont(e.target.value)}
-                    sx={{
-                      width: '100%',
-                      p: 1.5,
-                      borderRadius: 3,
-                      border: 1,
-                      borderColor: 'divider',
-                      bgcolor: 'background.paper',
-                      fontFamily: 'inherit',
-                      '&:focus': { outline: 'none', borderColor: 'primary.main' }
-                    }}
-                  >
+                  <Typography variant="body2" sx={{ mb: 2, fontWeight: 500, color: 'text.secondary' }}>Header Font</Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                     {HEADER_FONTS.map((font) => (
-                      <option key={font.name} value={font.value} style={{ fontFamily: font.value }}>
-                        {font.name}
-                      </option>
+                      <Box
+                        key={font.name}
+                        onClick={() => setHeaderFont(font.value)}
+                        sx={{
+                          p: 2,
+                          borderRadius: 3,
+                          border: 2,
+                          borderColor: headerFont === font.value ? 'primary.main' : 'divider',
+                          bgcolor: headerFont === font.value ? alpha(theme.palette.primary.main, 0.05) : 'background.paper',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            borderColor: headerFont === font.value ? 'primary.main' : alpha(theme.palette.text.primary, 0.2),
+                            transform: 'translateY(-2px)'
+                          }
+                        }}
+                      >
+                        <Typography variant="h6" sx={{ fontFamily: font.value, lineHeight: 1.2 }}>
+                          {font.name}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          The quick brown fox
+                        </Typography>
+                      </Box>
                     ))}
                   </Box>
                 </Grid>
+
+                {/* Body Font */}
                 <Grid size={{ xs: 12, sm: 6 }}>
-                  <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>Body Font</Typography>
-                  <Box
-                    component="select"
-                    value={bodyFont}
-                    onChange={(e) => setBodyFont(e.target.value)}
-                    sx={{
-                      width: '100%',
-                      p: 1.5,
-                      borderRadius: 3,
-                      border: 1,
-                      borderColor: 'divider',
-                      bgcolor: 'background.paper',
-                      fontFamily: 'inherit',
-                      '&:focus': { outline: 'none', borderColor: 'primary.main' }
-                    }}
-                  >
+                  <Typography variant="body2" sx={{ mb: 2, fontWeight: 500, color: 'text.secondary' }}>Body Font</Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                     {BODY_FONTS.map((font) => (
-                      <option key={font.name} value={font.value} style={{ fontFamily: font.value }}>
-                        {font.name}
-                      </option>
+                      <Box
+                        key={font.name}
+                        onClick={() => setBodyFont(font.value)}
+                        sx={{
+                          p: 2,
+                          borderRadius: 3,
+                          border: 2,
+                          borderColor: bodyFont === font.value ? 'primary.main' : 'divider',
+                          bgcolor: bodyFont === font.value ? alpha(theme.palette.primary.main, 0.05) : 'background.paper',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            borderColor: bodyFont === font.value ? 'primary.main' : alpha(theme.palette.text.primary, 0.2),
+                            transform: 'translateY(-2px)'
+                          }
+                        }}
+                      >
+                        <Typography variant="body1" sx={{ fontFamily: font.value, lineHeight: 1.2, mb: 0.5 }}>
+                          {font.name}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ fontFamily: font.value }}>
+                          The quick brown fox jumps over the lazy dog.
+                        </Typography>
+                      </Box>
                     ))}
                   </Box>
                 </Grid>

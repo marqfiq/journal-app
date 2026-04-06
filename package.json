@@ -4,6 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "serve:emulators": "firebase emulators:start --only auth,functions,firestore,storage",
+    "dev:all": "concurrently \"npm run dev\" \"npm run serve:emulators\"",
     "build": "vite build",
     "preview": "vite preview"
   },
@@ -35,6 +37,7 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.2.1",
     "vite": "^6.0.5"
   }
 }

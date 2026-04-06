@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Box, Typography, Button, Popover, IconButton, Stack, Tooltip, CircularProgress } from '@mui/material';
+import { Box, Typography, Button, Popover, IconButton, Stack, Tooltip, CircularProgress, useMediaQuery, useTheme } from '@mui/material';
 import { DatePicker, MobileTimePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
@@ -32,28 +32,34 @@ import { JournalEntry } from '../types';
 
 // --- COMPONENTS ---
 
-const DateButton = ({ value, onClick, anchorRef }: any) => (
-    <Box
-        ref={anchorRef}
-        onClick={onClick}
-        sx={{
-            display: 'flex',
-            alignItems: 'center',
-            cursor: 'pointer',
-            gap: 1,
-            color: 'text.primary',
-            '&:hover': { opacity: 0.7, textDecoration: 'underline' }
-        }}
-    >
-        <Box sx={{ color: 'text.secondary', display: 'flex' }}><Calendar size={20} /></Box>
-        <Typography variant="h6" sx={{ fontWeight: 500, lineHeight: 1 }}>
-            {value}
-        </Typography>
-    </Box>
-);
+const DateButton = ({ value, onClick, anchorRef }: any) => {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    return (
+        <Box
+            ref={anchorRef}
+            onClick={onClick}
+            sx={{
+                display: 'flex',
+                alignItems: 'center',
+                cursor: 'pointer',
+                gap: isMobile ? 0.5 : 1,
+                color: 'text.primary',
+                '&:hover': { opacity: 0.7, textDecoration: 'underline' }
+            }}
+        >
+            <Box sx={{ color: 'text.secondary', display: 'flex' }}><Calendar size={isMobile ? 18 : 20} /></Box>
+            <Typography variant={isMobile ? "subtitle1" : "h6"} sx={{ fontWeight: 600, lineHeight: 1 }}>
+                {value}
+            </Typography>
+        </Box>
+    );
+};
 
 // --- SORTABLE ITEM ---
 const SortableStickerItem = ({ sticker, isReordering, onSelect, onRemove, canManage }: any) => {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const [isHovered, setIsHovered] = useState(false);
 
     const {
@@ -68,7 +74,7 @@ const SortableStickerItem = ({ sticker, isReordering, onSelect, onRemove, canMan
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
-        width: '20%',
+        width: isMobile ? '25%' : '20%',
         padding: '6px',
         boxSizing: 'border-box' as const,
         position: 'relative' as const,
@@ -77,7 +83,7 @@ const SortableStickerItem = ({ sticker, isReordering, onSelect, onRemove, canMan
         touchAction: isReordering ? 'none' : 'pan-y'
     };
 
-    const handleClick = (e: React.MouseEvent) => {
+    const handleClick = () => {
         if (!isReordering && !isDragging) {
             onSelect(sticker.id);
         }
@@ -103,6 +109,7 @@ const SortableStickerItem = ({ sticker, isReordering, onSelect, onRemove, canMan
                     src={sticker.url}
                     alt="sticker"
                     draggable={false}
+                    loading="lazy"
                     sx={{
                         width: '100%',
                         height: '100%',
@@ -219,6 +226,7 @@ interface EntryHeaderProps {
     customActions?: React.ReactNode;
     onStickerReorder?: (newOrder: any[]) => void;
     disableImages?: boolean;
+    uploadingImages?: boolean;
 }
 
 export default function EntryHeader({
@@ -246,7 +254,10 @@ export default function EntryHeader({
     customActions,
     onStickerReorder,
     disableImages = false,
+    uploadingImages = false,
 }: EntryHeaderProps) {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const dateAnchorRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [uploadingSticker, setUploadingSticker] = useState(false);
@@ -359,17 +370,6 @@ export default function EntryHeader({
                             onClick={onDateOpen}
                             anchorRef={dateAnchorRef}
                         />
-
-                        {(entry.mood || 0) > 0 && (
-                            <Tooltip title="Change Mood">
-                                <Box
-                                    onClick={onMoodClick}
-                                    sx={{ fontSize: '1.5rem', cursor: 'pointer', '&:hover': { transform: 'scale(1.1)' } }}
-                                >
-                                    {['😢', '😕', '😐', '🙂', '😄'][(entry.mood!) - 1]}
-                                </Box>
-                            </Tooltip>
-                        )}
                     </Box>
                     {customActions ? customActions : (
                         <EntryHeaderActions
@@ -378,6 +378,7 @@ export default function EntryHeader({
                             onStickerClick={onStickerClick}
                             onImageClick={onImageClick}
                             disableImages={disableImages}
+                            uploadingImages={uploadingImages}
                         />
                     )}
                 </Box>
@@ -455,11 +456,17 @@ export default function EntryHeader({
                     }}
                     anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
                     transformOrigin={{ vertical: 'top', horizontal: 'center' }}
-                    PaperProps={{ sx: { borderRadius: 2, boxShadow: 4 } }}
+                    PaperProps={{ 
+                        sx: { 
+                            borderRadius: 2, 
+                            boxShadow: 4,
+                            maxWidth: '95vw'
+                        } 
+                    }}
                     keepMounted
                 >
                     <Box
-                        sx={{ p: 2, width: 500, maxHeight: 500, overflowY: 'auto' }}
+                        sx={{ p: 2, width: { xs: '90vw', sm: 500 }, maxHeight: { xs: '60vh', sm: 500 }, overflowY: 'auto' }}
                         // Apply Global Click Handler to the Container
                         onClick={handleBackgroundClick}
                     >

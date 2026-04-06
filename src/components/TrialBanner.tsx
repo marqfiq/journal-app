@@ -29,7 +29,7 @@ export default function TrialBanner({ trialEndAt, status = 'trial' }: TrialBanne
         diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
         if (diffDays <= 0) return null; // Should be handled by status='expired' but safe check
-        message = `Free Trial Active: ${diffDays} ${diffDays === 1 ? 'day' : 'days'} remaining`;
+        message = `Free Trial Active: ${diffDays} ${diffDays === 1 ? 'day' : 'days'} left`;
     } else {
         message = "Your trial or subscription has ended. Subscribe to continue writing";
     }
@@ -47,41 +47,61 @@ export default function TrialBanner({ trialEndAt, status = 'trial' }: TrialBanne
                     <Box sx={{
                         bgcolor: status === 'expired' ? 'warning.light' : 'primary.main',
                         color: status === 'expired' ? 'warning.contrastText' : 'primary.contrastText',
-                        p: 1,
+                        py: 1, // Increased from 0.5 to 1 (add 4px)
                         px: 2,
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        position: 'relative',
-                        fontSize: '0.875rem'
+                        justifyContent: 'space-between',
+                        gap: 2,
+                        width: '100%',
+                        overflow: 'hidden',
+                        whiteSpace: 'nowrap'
                     }}>
-                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        <Typography variant="body2" sx={{
+                            fontWeight: 600,
+                            textAlign: 'left',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            flexGrow: 1,
+                            minWidth: 0 // Required for ellipsis in flexbox
+                        }}>
                             {message}
                         </Typography>
 
-                        <Button
-                            variant="outlined"
-                            color="inherit"
-                            size="small"
-                            href="#pricing"
-                            sx={{ ml: 2, borderColor: 'inherit', '&:hover': { borderColor: 'inherit', bgcolor: 'rgba(255,255,255,0.1)' } }}
-                        >
-                            Subscribe
-                        </Button>
+                        <Box sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1, // 8px spacing
+                            flexShrink: 0
+                        }}>
+                            <Button
+                                variant="outlined"
+                                color="inherit"
+                                size="small"
+                                href="#pricing"
+                                sx={{
+                                    borderColor: 'inherit',
+                                    textTransform: 'none',
+                                    fontWeight: 600,
+                                    '&:hover': { borderColor: 'inherit', bgcolor: 'rgba(255,255,255,0.1)' }
+                                }}
+                            >
+                                Subscribe
+                            </Button>
 
-                        <IconButton
-                            size="small"
-                            onClick={() => setVisible(false)}
-                            sx={{
-                                position: 'absolute',
-                                right: 8,
-                                color: 'inherit',
-                                opacity: 0.8,
-                                '&:hover': { opacity: 1 }
-                            }}
-                        >
-                            <X size={16} />
-                        </IconButton>
+                            <IconButton
+                                size="small"
+                                onClick={() => setVisible(false)}
+                                sx={{
+                                    color: 'inherit',
+                                    opacity: 0.8,
+                                    '&:hover': { opacity: 1 }
+                                }}
+                            >
+                                <X size={16} />
+                            </IconButton>
+                        </Box>
                     </Box>
                 </motion.div>
             )}

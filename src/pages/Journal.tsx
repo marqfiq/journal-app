@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Box, Typography, Button, Paper, IconButton, useMediaQuery, useTheme, Divider, Chip, Tooltip } from '@mui/material';
-import { Plus, Edit2, Trash2, X, Eye } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Eye, Search } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { JournalEntry } from '../types';
 import { JournalService } from '../services/journal';
@@ -15,9 +15,11 @@ import EntryHeader from '../components/EntryHeader';
 import EntryAttachments from '../components/EntryAttachments';
 import { StorageService } from '../services/storage';
 import { MAX_IMAGES_PER_ENTRY } from '../constants/config';
+import { useJournal } from '../context/JournalContext';
+import MemoryLoading from '../components/MemoryLoading';
 
 export default function Journal() {
-    const [entries, setEntries] = useState<JournalEntry[]>([]);
+    const { entries, loading, updateEntry, deleteEntry } = useJournal();
     const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
     const { user } = useAuth();
     const navigate = useNavigate();
@@ -54,24 +56,18 @@ export default function Journal() {
 
 
     useEffect(() => {
-        async function loadEntries() {
-            if (!user) return;
-            const data = await JournalService.getEntries(user.uid);
-            setEntries(data);
-            if (data.length > 0 && !isMobile && !selectedEntryId) {
-                // If returning from view, restore selection
-                if (location.state?.selectedEntryId) {
-                    setSelectedEntryId(location.state.selectedEntryId);
-                } else {
-                    setSelectedEntryId(data[0].id);
-                }
-            } else if (location.state?.selectedEntryId) {
-                // Even on mobile, or generally if state is passed, assume we might want to select it
+        if (entries.length > 0 && !isMobile && !selectedEntryId) {
+            // If returning from view, restore selection
+            if (location.state?.selectedEntryId) {
                 setSelectedEntryId(location.state.selectedEntryId);
+            } else {
+                setSelectedEntryId(entries[0].id);
             }
+        } else if (!isMobile && location.state?.selectedEntryId) {
+            // Only auto-select from state on desktop to keep mobile view as a list
+            setSelectedEntryId(location.state.selectedEntryId);
         }
-        loadEntries();
-    }, [user, isMobile, location.state]);
+    }, [entries.length, isMobile, location.state, selectedEntryId]);
 
     const selectedEntry = entries.find(e => e.id === selectedEntryId);
 
@@ -89,8 +85,7 @@ export default function Journal() {
     const confirmDelete = async () => {
         if (!entryToDelete) return;
 
-        await JournalService.deleteEntry(entryToDelete);
-        setEntries(entries.filter(e => e.id !== entryToDelete));
+        await deleteEntry(entryToDelete);
         if (selectedEntryId === entryToDelete) {
             setSelectedEntryId(null);
         }
@@ -100,13 +95,8 @@ export default function Journal() {
 
     const handleUpdateEntry = async (updates: Partial<JournalEntry>) => {
         if (!selectedEntryId) return;
-
-        setEntries(prevEntries => prevEntries.map(e =>
-            e.id === selectedEntryId ? { ...e, ...updates } : e
-        ));
-
         try {
-            await JournalService.updateEntry(selectedEntryId, updates);
+            await updateEntry(selectedEntryId, updates);
         } catch (error) {
             console.error("Failed to update entry", error);
         }
@@ -117,11 +107,6 @@ export default function Journal() {
         const urlToDelete = selectedEntry.image_urls[index];
         const newImageUrls = selectedEntry.image_urls.filter((_, i) => i !== index);
 
-        // Optimistic update
-        setEntries(prevEntries => prevEntries.map(e =>
-            e.id === selectedEntryId ? { ...e, image_urls: newImageUrls } : e
-        ));
-
         if (newImageUrls.length === 0) {
             setLightboxOpen(false);
         } else if (index >= newImageUrls.length) {
@@ -130,10 +115,9 @@ export default function Journal() {
 
         try {
             await StorageService.deleteImage(urlToDelete);
-            await JournalService.updateEntry(selectedEntryId, { image_urls: newImageUrls });
+            await updateEntry(selectedEntryId, { image_urls: newImageUrls });
         } catch (error) {
             console.error("Failed to delete image", error);
-            // Revert logic could go here
         }
     };
 
@@ -216,12 +200,39 @@ export default function Journal() {
         };
     }, [resize, stopResizing]);
 
+    // Navigation-safe: we rely on global state; no blocking loading screen.
+
     return (
-        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 3 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Typography variant="h4" component="h1">
-                    My Journal
-                </Typography>
+        <Box sx={{ 
+            height: '100dvh', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            px: { xs: 0, md: 3 },
+            pt: { xs: 2, md: 3 },
+            pb: { xs: 2, md: 3 }
+        }}>
+            <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center', 
+                mb: { xs: 2, md: 3 },
+                px: { xs: 2, md: 0 } // Add padding back to header on mobile
+            }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="h4" component="h1">
+                        My Journal
+                    </Typography>
+                    <IconButton 
+                        size="small" 
+                        onClick={() => navigate('/search')}
+                        sx={{ 
+                            color: 'text.secondary',
+                            '&:hover': { bgcolor: 'action.hover' }
+                        }}
+                    >
+                        <Search size={22} />
+                    </IconButton>
+                </Box>
                 <Button
                     variant="contained"
                     startIcon={<Plus size={20} />}
@@ -240,9 +251,6 @@ export default function Journal() {
                     display: 'flex',
                     flexDirection: isMobile ? 'column' : 'row',
                     gap: isMobile ? 0 : 0,
-                    mx: -2,
-                    my: -2,
-                    p: 2
                 }}
             >
                 {/* Sidebar List */}
@@ -252,11 +260,9 @@ export default function Journal() {
                         width: isMobile ? '100%' : sidebarWidth,
                         height: '100%',
                         overflowY: 'auto',
-                        pr: isMobile ? 0 : 2,
-                        pl: 2,
-                        ml: -2,
+                        pr: isMobile ? 2 : 1.5,
+                        pl: isMobile ? 2 : 1.5,
                         pt: 2,
-                        mt: -2,
                         display: (isMobile && selectedEntryId) ? 'none' : 'block',
                         flexShrink: 0,
                         '&::-webkit-scrollbar-track': { my: 2 }
@@ -267,7 +273,19 @@ export default function Journal() {
                             key={entry.id}
                             entry={entry}
                             isSelected={selectedEntryId === entry.id}
-                            onClick={() => setSelectedEntryId(entry.id)}
+                            onClick={() => {
+                                if (isMobile) {
+                                    navigate(`/journal/${entry.id}`, {
+                                        state: {
+                                            from: '/journal',
+                                            label: 'Journal',
+                                            context: { selectedEntryId: entry.id }
+                                        }
+                                    });
+                                } else {
+                                    setSelectedEntryId(entry.id);
+                                }
+                            }}
                         />
                     ))}
                     {entries.length === 0 && (

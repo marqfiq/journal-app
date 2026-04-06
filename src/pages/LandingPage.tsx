@@ -126,7 +126,6 @@ export default function LandingPage() {
                                 <Typography variant="h2" component="h1" gutterBottom sx={{
                                     fontFamily: 'var(--font-serif)',
                                     fontWeight: 'var(--font-weight-header)',
-                                    fontSize: { xs: '2.5rem', md: '3.5rem' },
                                     mb: 3
                                 }}>
                                     A safe place to write <br />and look back at your memories.
