@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useImperativeHandle, forwardRef } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
@@ -9,6 +9,10 @@ interface EntryEditorProps {
     initialContent?: string;
     onUpdate: (content: string) => void;
     editable?: boolean;
+}
+
+export interface EntryEditorHandle {
+    getHTML: () => string;
 }
 
 const MenuBar = ({ editor }: { editor: any }) => {
@@ -94,7 +98,7 @@ const MenuBar = ({ editor }: { editor: any }) => {
     );
 };
 
-export default function EntryEditor({ initialContent = '', onUpdate, editable = true }: EntryEditorProps) {
+const EntryEditor = forwardRef<EntryEditorHandle, EntryEditorProps>(({ initialContent = '', onUpdate, editable = true }, ref) => {
     const editor = useEditor({
         extensions: [
             StarterKit,
@@ -112,7 +116,24 @@ export default function EntryEditor({ initialContent = '', onUpdate, editable = 
         },
     });
 
-    React.useEffect(() => {
+    useImperativeHandle(ref, () => ({
+        getHTML: () => {
+            return editor ? editor.getHTML() : '';
+        }
+    }), [editor]);
+
+    // Synchronize content if initialContent changes and we're not actively typing
+    // This fixes the "blank view" issue after rapid saves/redirections.
+    useEffect(() => {
+        if (editor && initialContent !== undefined && editor.getHTML() !== initialContent) {
+            // Only force update if not focused (to avoid cursor jumps) OR if we are in view mode
+            if (!editor.isFocused || !editable) {
+                editor.commands.setContent(initialContent);
+            }
+        }
+    }, [editor, initialContent, editable]);
+
+    useEffect(() => {
         if (editor) {
             editor.setEditable(editable);
         }
@@ -126,4 +147,9 @@ export default function EntryEditor({ initialContent = '', onUpdate, editable = 
             </Box>
         </Box>
     );
-}
+});
+
+EntryEditor.displayName = 'EntryEditor';
+
+export default EntryEditor;
+

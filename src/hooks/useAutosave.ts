@@ -26,6 +26,8 @@ export function useAutosave<T>({ data, onSave, interval = 2000, saveOnUnmount = 
     const isOnline = useRef(navigator.onLine);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
     const pendingSave = useRef(false);
+    const isSavingRef = useRef(false);
+    const queuedDataRef = useRef<T | null>(null);
 
     // Online/Offline listeners
     useEffect(() => {
@@ -62,12 +64,19 @@ export function useAutosave<T>({ data, onSave, interval = 2000, saveOnUnmount = 
 
     // Core Save Logic
     const performSave = useCallback(async (dataToSave: T) => {
+        // If already saving, queue the latest data for the next run
+        if (isSavingRef.current) {
+            queuedDataRef.current = dataToSave;
+            return;
+        }
+
         if (timeoutRef.current) {
             clearTimeout(timeoutRef.current);
             timeoutRef.current = null;
         }
 
         pendingSave.current = false;
+        isSavingRef.current = true;
         setStatus('saving');
 
         try {
@@ -78,8 +87,15 @@ export function useAutosave<T>({ data, onSave, interval = 2000, saveOnUnmount = 
         } catch (error) {
             console.error('Autosave failed', error);
             setStatus('error');
-            // If failed, we might want to keep pendingSave true? 
-            // But for now let's assume error state handles it.
+        } finally {
+            isSavingRef.current = false;
+            
+            // If data changed while we were busy saving, trigger another save with the latest
+            if (queuedDataRef.current) {
+                const nextData = queuedDataRef.current;
+                queuedDataRef.current = null;
+                performSave(nextData);
+            }
         }
     }, [onSave]);
 

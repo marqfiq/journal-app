@@ -1,7 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp, FirebaseApp } from 'firebase/app'
 import { getAuth, Auth, connectAuthEmulator } from 'firebase/auth'
-import { getFirestore, Firestore, connectFirestoreEmulator } from 'firebase/firestore'
+import { initializeFirestore, connectFirestoreEmulator, Firestore } from 'firebase/firestore'
 import { getFunctions, Functions, connectFunctionsEmulator } from 'firebase/functions'
 import { getStorage, FirebaseStorage, connectStorageEmulator } from 'firebase/storage'
 import { getAnalytics, Analytics } from 'firebase/analytics'
@@ -22,17 +22,19 @@ const app: FirebaseApp = initializeApp(firebaseConfig)
 
 // Initialize Firebase services
 export const auth: Auth = getAuth(app)
-export const db: Firestore = getFirestore(app)
+export const db: Firestore = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+})
 export const functions: Functions = getFunctions(app)
 export const storage: FirebaseStorage = getStorage(app)
 export const analytics: Analytics = getAnalytics(app)
 
 // For local development with emulator
 if (import.meta.env.DEV) {
-  connectAuthEmulator(auth, 'http://localhost:9099')
-  connectFirestoreEmulator(db, 'localhost', 8080)
-  connectFunctionsEmulator(functions, 'localhost', 5001)
-  connectStorageEmulator(storage, 'localhost', 9199)
+  connectAuthEmulator(auth, 'http://127.0.0.1:9099')
+  connectFirestoreEmulator(db, '127.0.0.1', 8080)
+  connectFunctionsEmulator(functions, '127.0.0.1', 5001)
+  connectStorageEmulator(storage, '127.0.0.1', 9199)
 }
 
 export default app
