@@ -103,12 +103,23 @@ export default function Entry() {
     if (location.state?.entry || isNew) return false;
     return true; 
   });
-  const textRef = useRef(entry.text || '');
+  
+  // source of truth for saves to avoid React state lag
+  const latestEntryRef = useRef<Partial<JournalEntry>>(entry);
+  const editorRef = useRef<any>(null);
 
-  // Keep textRef synced with entry.text (for initial loads)
+  const updateEntryState = useCallback((updates: Partial<JournalEntry> | ((prev: Partial<JournalEntry>) => Partial<JournalEntry>)) => {
+    setEntry(prev => {
+      const next = typeof updates === 'function' ? updates(prev) : { ...prev, ...updates };
+      latestEntryRef.current = next;
+      return next;
+    });
+  }, []);
+
+  // Sync ref whenever entry initial load happens
   useEffect(() => {
-    if (entry.text !== undefined) textRef.current = entry.text;
-  }, [entry.text]);
+    latestEntryRef.current = entry;
+  }, [entry.id]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -220,7 +231,7 @@ export default function Entry() {
       try {
         const newId = await creationPromise.current;
         // Update local state WITH the new ID, but use functional update to be safe
-        setEntry(prev => ({ ...prev, id: newId }));
+        updateEntryState(prev => ({ ...prev, id: newId }));
       } catch (error) {
         console.error("Failed to create entry", error);
         creationPromise.current = null;
@@ -265,9 +276,23 @@ export default function Entry() {
   };
 
   const handleDone = async () => {
+    // FORCE BLUR to dismiss keyboard and flush any pending event buffers in the browser
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+
     setIsSavingAndClosing(true);
-    // Construct the ABSOLUTE latest entry using a synchronous ref
-    const latestEntry = { ...entry, text: textRef.current };
+
+    // EAGER PULL: Get the absolute most recent HTML directly from the editor instance, 
+    // bypassing the async event loop and React state updates.
+    const latestHTML = editorRef.current?.getHTML();
+    
+    // Construct the ABSOLUTE latest entry
+    const latestEntry = { 
+      ...latestEntryRef.current, 
+      text: latestHTML !== undefined ? latestHTML : latestEntryRef.current.text 
+    };
+    
     await saveNow(latestEntry);
 
     // Check for trial start eligibility
@@ -323,7 +348,7 @@ export default function Entry() {
       }
 
       if (urls.length > 0) {
-        setEntry(prev => ({
+        updateEntryState(prev => ({
           ...prev,
           image_urls: [...(prev.image_urls || []), ...urls]
         }));
@@ -341,7 +366,7 @@ export default function Entry() {
     const urlToDelete = entry.image_urls[index];
     const newImageUrls = entry.image_urls.filter((_, i) => i !== index);
 
-    setEntry(prev => ({ ...prev, image_urls: newImageUrls }));
+    updateEntryState(prev => ({ ...prev, image_urls: newImageUrls }));
 
     if (newImageUrls.length === 0) {
       setLightboxOpen(false);
@@ -517,7 +542,7 @@ export default function Entry() {
               <motion.div variants={itemVariants}>
                 <EntryHeader
                   entry={entry}
-                  onUpdate={(updates) => setEntry((prev: any) => ({ ...prev, ...updates }))}
+                  onUpdate={(updates) => updateEntryState(updates)}
                   onImageClick={handleImageClick}
                   stickers={stickers}
                   canManageStickers={canManage}
@@ -574,10 +599,10 @@ export default function Entry() {
             <Box sx={{ px: { xs: 1.5, sm: 4 }, pb: 4, position: 'relative', zIndex: 1 }}>
               <motion.div variants={itemVariants}>
                 <EntryEditor
+                  ref={editorRef}
                   initialContent={entry.text}
                   onUpdate={(content) => {
-                    textRef.current = content; // Sync Ref instantly!
-                    setEntry(prev => ({ ...prev, text: content }));
+                    updateEntryState({ text: content });
                   }}
                   editable={isEditing}
                 />
