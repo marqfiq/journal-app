@@ -62,7 +62,14 @@ export function useAutosave<T>({ data, onSave, interval = 2000, saveOnUnmount = 
         }
     }, [data, key]);
 
+    // Reset comparison baseline when key changes (e.g. route transition from /new to /{id})
+    useEffect(() => {
+        previousDataRef.current = dataRef.current;
+        setStatus('idle');
+    }, [key]);
+
     // Core Save Logic
+    // Uses onSaveRef.current (not the closed-over onSave) to always call the latest handler
     const performSave = useCallback(async (dataToSave: T) => {
         // If already saving, queue the latest data for the next run
         if (isSavingRef.current) {
@@ -80,7 +87,7 @@ export function useAutosave<T>({ data, onSave, interval = 2000, saveOnUnmount = 
         setStatus('saving');
 
         try {
-            await onSave(dataToSave);
+            await onSaveRef.current(dataToSave);
             setStatus('saved');
             setLastSaved(new Date());
             previousDataRef.current = dataToSave;
@@ -97,7 +104,7 @@ export function useAutosave<T>({ data, onSave, interval = 2000, saveOnUnmount = 
                 performSave(nextData);
             }
         }
-    }, [onSave]);
+    }, []);
 
     // Core Debounced Cloud Save Effect
     useEffect(() => {
@@ -142,6 +149,12 @@ export function useAutosave<T>({ data, onSave, interval = 2000, saveOnUnmount = 
     const retry = () => setRetryTrigger(prev => prev + 1);
 
     const saveNow = useCallback(async (manualData?: T) => {
+        // Cancel any pending debounce timer so stale data doesn't save after us
+        if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+            timeoutRef.current = null;
+        }
+        pendingSave.current = false;
         await performSave(manualData ?? dataRef.current);
     }, [performSave]);
 

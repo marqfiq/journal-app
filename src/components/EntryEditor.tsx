@@ -124,11 +124,16 @@ const EntryEditor = forwardRef<EntryEditorHandle, EntryEditorProps>(({ initialCo
 
     // Synchronize content if initialContent changes and we're not actively typing
     // This fixes the "blank view" issue after rapid saves/redirections.
+    // IMPORTANT: emitUpdate=false (2nd arg) prevents setContent from firing onUpdate,
+    // which would cascade stale text back into React state and trigger a Firestore
+    // save that overwrites the correct data that was just saved by handleDone.
     useEffect(() => {
         if (editor && initialContent !== undefined && editor.getHTML() !== initialContent) {
-            // Only force update if not focused (to avoid cursor jumps) OR if we are in view mode
-            if (!editor.isFocused || !editable) {
-                editor.commands.setContent(initialContent);
+            // Only force update if we are in view mode.
+            // When editing, the editor's internal state is the source of truth,
+            // and overwriting it on 'blur' causes data loss if initialContent is lagging.
+            if (!editable) {
+                editor.commands.setContent(initialContent, { emitUpdate: false });
             }
         }
     }, [editor, initialContent, editable]);
