@@ -107,6 +107,7 @@ export default function Entry() {
   // source of truth for saves to avoid React state lag
   const latestEntryRef = useRef<Partial<JournalEntry>>(entry);
   const editorRef = useRef<any>(null);
+  const initialLoadDone = useRef(!!locationState?.entry || isNew);
 
   const updateEntryState = useCallback((updates: Partial<JournalEntry> | ((prev: Partial<JournalEntry>) => Partial<JournalEntry>)) => {
     setEntry(prev => {
@@ -121,12 +122,18 @@ export default function Entry() {
     latestEntryRef.current = entry;
   }, [entry.id]);
 
+  // Reset initial load flag when navigating to a different entry
+  useEffect(() => {
+    initialLoadDone.current = false;
+  }, [id]);
+
   useEffect(() => {
     const loadData = async () => {
       if (!user) return;
 
       if (locationState?.entry) {
         setEntry(locationState.entry);
+        initialLoadDone.current = true;
         setLoading(false);
         return;
       }
@@ -141,6 +148,7 @@ export default function Entry() {
           image_urls: []
         });
         setIsEditing(true);
+        initialLoadDone.current = true;
         localStorage.removeItem('entry-new');
 
         // Anti-flicker: Delay showing UI slightly to allow auth/redirect to settle
@@ -155,21 +163,15 @@ export default function Entry() {
       }
 
       if (id && !journalLoading) {
+        // Once the entry is loaded, don't let context updates overwrite local state.
+        // Local state is the source of truth after initial load — it syncs TO Firestore,
+        // not FROM context.
+        if (initialLoadDone.current) return;
+
         const found = entries.find(e => e.id === id);
 
         if (found) {
-          // PROTECTION: 
-          // 1. If we are currently NEW, and just got an ID, or just navigated, we skip overwrite.
-          // 2. If we are already editing this exact entry, we skip unless we have no data yet.
-          const isFreshHandover = (locationState?.entry || isNew) && entry.id === id;
-          const isCurrentlyEditing = isEditing && entry.id === id && entry.text;
-
-          if (isFreshHandover || isCurrentlyEditing) {
-            console.log('Skipping cache update to preserve latest user text.');
-            setLoading(false);
-            return;
-          }
-
+          initialLoadDone.current = true;
           setEntry(found);
           setLoading(false);
         } else {
@@ -178,6 +180,7 @@ export default function Entry() {
             const data = await JournalService.getEntries(user.uid);
             const entryDoc = data.find((e: JournalEntry) => e.id === id);
             if (entryDoc) {
+              initialLoadDone.current = true;
               setEntry(entryDoc);
               setLoading(false);
             } else {
@@ -239,7 +242,7 @@ export default function Entry() {
     } else if (id) {
       await updateEntry(id, currentEntry);
     }
-  }, [user, isNew, id]);
+  }, [user, isNew, id, addEntry, updateEntry]);
 
   useEffect(() => {
     // Only navigate if we have a valid string ID to prevent [object Object] errors
@@ -250,12 +253,13 @@ export default function Entry() {
         replace: true, 
         state: { 
           ...location.state, 
-          entry, 
+          // Omit `entry` so the new route explicitly loads the fully synced Context data 
+          // instead of a potentially stale batched React state closure.
           isEditing: !isSavingAndClosing // Respect if user clicked "Done"
         } 
       });
     }
-  }, [isNew, entry.id, navigate, entry, location.state]);
+  }, [isNew, entry.id, navigate, location.state, isSavingAndClosing]);
 
   const { status, retry, saveNow } = useAutosave({
     data: entry,
@@ -283,17 +287,21 @@ export default function Entry() {
 
     setIsSavingAndClosing(true);
 
-    // EAGER PULL: Get the absolute most recent HTML directly from the editor instance, 
-    // bypassing the async event loop and React state updates.
-    const latestHTML = editorRef.current?.getHTML();
-    
-    // Construct the ABSOLUTE latest entry
-    const latestEntry = { 
-      ...latestEntryRef.current, 
-      text: latestHTML !== undefined ? latestHTML : latestEntryRef.current.text 
-    };
-    
-    await saveNow(latestEntry);
+    // Use the absolute latest entry state (source of truth)
+    const latestEntry = { ...latestEntryRef.current };
+
+    // Sync React state so the view mode shows correct content
+    updateEntryState(latestEntry);
+
+    // ALWAYS use saveNow so we coordinate with the autosave hook.
+    // If we call updateEntry directly for existing entries, the autosave 
+    // hook's debouncer is completely unaware, and its pending timer for 
+    // an older keystroke might fire *after* our manual save!
+    try {
+      await saveNow(latestEntry);
+    } catch (error) {
+      console.error("Failed to save entry", error);
+    }
 
     // Check for trial start eligibility
     if (user) {

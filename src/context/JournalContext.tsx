@@ -52,7 +52,7 @@ export function JournalProvider({ children }: { children: React.ReactNode }) {
         return () => { isMounted = false; };
     }, [fetchEntries]);
 
-    const addEntry = async (entry: Omit<JournalEntry, 'id'>) => {
+    const addEntry = useCallback(async (entry: Omit<JournalEntry, 'id'>) => {
         if (!user) throw new Error("Must be logged in to add entry");
         
         // Firestore call returns { id, ...newEntry }
@@ -64,9 +64,9 @@ export function JournalProvider({ children }: { children: React.ReactNode }) {
         setEntries(prev => [newEntry, ...prev].sort((a, b) => b.date - a.date));
         
         return id;
-    };
+    }, [user]);
 
-    const updateEntry = async (id: string, updates: Partial<JournalEntry>) => {
+    const updateEntry = useCallback(async (id: string, updates: Partial<JournalEntry>) => {
         // Optimistic local update
         setEntries(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e).sort((a, b) => b.date - a.date));
         
@@ -78,9 +78,9 @@ export function JournalProvider({ children }: { children: React.ReactNode }) {
             await fetchEntries(); // Re-sync
             throw error;
         }
-    };
+    }, [fetchEntries]);
 
-    const deleteEntry = async (id: string) => {
+    const deleteEntry = useCallback(async (id: string) => {
         // Optimistic local delete
         setEntries(prev => prev.filter(e => e.id !== id));
         
@@ -91,7 +91,7 @@ export function JournalProvider({ children }: { children: React.ReactNode }) {
             await fetchEntries(); // Re-sync
             throw error;
         }
-    };
+    }, [fetchEntries]);
 
     return (
         <JournalContext.Provider value={{ 
